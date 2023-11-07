@@ -237,17 +237,19 @@ void GUI::GUIDirectInputButtons(
   std::byte* state,
   size_t first,
   size_t count) {
-  auto drawList = ImGui::GetWindowDrawList();
-  const auto radius = ImGui::GetTextLineHeight();
-  const auto borderThickness = 1.0f;
+  const auto& style = ImGui::GetStyle();
 
   const auto x = ImGui::GetCursorScreenPos().x;
-  const auto labelX = x + radius + ImGui::GetTreeNodeToLabelSpacing();
+  const auto radius = ImGui::GetTextLineHeight();
+  const auto labelX = x + radius + style.ItemInnerSpacing.x;
+  const auto borderThickness = 1.0f;
 
   const auto enabledBorderColor = ImGui::GetColorU32(ImGuiCol_Text);
   const auto disabledBorderColor = ImGui::GetColorU32(ImGuiCol_TextDisabled);
 
   const auto activeColor = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+
+  auto drawList = ImGui::GetWindowDrawList();
 
   for (auto i = first; i < first + count; ++i) {
     const auto present = (first + i) < info.mButtons.size();
