@@ -237,7 +237,8 @@ void GUI::GUIDirectInputButtons(
   std::byte* state,
   size_t first,
   size_t count) {
-  if (first >= info.mButtons.size()) {
+  const auto buttonCount = info.mButtons.size();
+  if (first >= buttonCount) {
     // Currently deciding to just hide buttons that don't exist on this
     // controller, but the code below will handle rendering them as disabled
     // too if you remove this, and the break below
@@ -260,7 +261,7 @@ void GUI::GUIDirectInputButtons(
   float yOffset = style.FramePadding.y;
 
   for (auto i = first; i < first + count; ++i) {
-    const auto present = (first + i) < info.mButtons.size();
+    const auto present = i < buttonCount;
     if (!present) {
       break;
     }
@@ -305,7 +306,12 @@ void GUI::GUIDirectInputButtons(
         button.mSeenOff = true;
       }
 
-      ImGui::Text("%s", button.mName.c_str());
+      if (button.mSeenOff && button.mSeenOn) {
+        ImGui::TextColored(
+          {0.0f, 1.0f, 0.0f, 1.0f}, "%s", button.mName.c_str());
+      } else {
+        ImGui::Text("%s", button.mName.c_str());
+      }
     }
 
     ImGui::PopID();
