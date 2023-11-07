@@ -56,6 +56,29 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
   winrt::check_hresult(mDevice->EnumObjects(
     &CBEnumDeviceObjects, this, DIDFT_AXIS | DIDFT_BUTTON));
 
+  const std::vector<winrt::guid> axisOrder {
+    GUID_XAxis,
+    GUID_YAxis,
+    GUID_ZAxis,
+    GUID_RxAxis,
+    GUID_RyAxis,
+    GUID_RzAxis,
+    GUID_Slider,
+  };
+  std::stable_sort(
+    mAxes.begin(), mAxes.end(), [&axisOrder](const auto& a, const auto& b) {
+      const auto ait = std::ranges::find(axisOrder, a.mGuid);
+      if (ait == axisOrder.end()) {
+        return false;
+      }
+
+      const auto bit = std::ranges::find(axisOrder, b.mGuid);
+      if (bit == axisOrder.end()) {
+        return false;
+      }
+      return ait < bit;
+    });
+
   DWORD offset {};
   std::vector<DIOBJECTDATAFORMAT> objectFormats;
   for (auto& axis: mAxes) {
