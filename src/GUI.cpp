@@ -150,7 +150,8 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
   {
     const auto buttonCount = deviceInfo->mButtons.size();
-    const auto columnCount = (buttonCount == 0) ? 1 : ((buttonCount / 32) + 2);
+    const auto columnCount
+      = (buttonCount == 0) ? 1 : (((buttonCount - 1) / 32) + 1);
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
     const auto buf = state.data();
