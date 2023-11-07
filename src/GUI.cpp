@@ -64,6 +64,8 @@ void GUI::Run() {
   }
 
   this->InitFonts();
+  ImGui::PushStyleColor(
+    ImGuiCol_PlotLines, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 
   sf::Clock deltaClock {};
   while (window.isOpen()) {
@@ -97,6 +99,8 @@ void GUI::Run() {
     ImGui::SFML::Render(window);
     window.display();
   }
+  ImGui::PopStyleColor();
+
   ImGui::SFML::Shutdown();
 }
 
@@ -177,6 +181,8 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 }
 
 void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
+  const auto height = ImGui::GetTextLineHeight() * 3;
+
   for (auto& axis: info.mAxes) {
     const auto value = *reinterpret_cast<DWORD*>(state + axis.mDataOffset);
     if (axis.mValues.empty()) {
@@ -221,7 +227,8 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       0,
       valueStr.c_str(),
       axis.mMin,
-      axis.mMax);
+      axis.mMax,
+      {-FLT_MIN, height});
   }
 }
 
