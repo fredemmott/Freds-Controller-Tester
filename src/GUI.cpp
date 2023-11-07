@@ -145,7 +145,9 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
     deviceInfo->mDevice->GetDeviceState(deviceInfo->mDataSize, state.data()));
 
   {
-    ImGui::BeginTable("##Controls", 5, 0, {-FLT_MIN, -FLT_MIN});
+    const auto buttonCount = deviceInfo->mButtons.size();
+    const auto columnCount = (buttonCount == 0) ? 1 : ((buttonCount / 32) + 2);
+    ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
     const auto buf = state.data();
 
@@ -154,12 +156,19 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
     ImGui::TableNextColumn();
     GUIDirectInputButtons(*deviceInfo, buf, 0, 32);
-    ImGui::TableNextColumn();
-    GUIDirectInputButtons(*deviceInfo, buf, 32, 32);
-    ImGui::TableNextColumn();
-    GUIDirectInputButtons(*deviceInfo, buf, 64, 32);
-    ImGui::TableNextColumn();
-    GUIDirectInputButtons(*deviceInfo, buf, 96, 32);
+
+    if (buttonCount > 32) {
+      ImGui::TableNextColumn();
+      GUIDirectInputButtons(*deviceInfo, buf, 32, 32);
+    }
+    if (buttonCount > 64) {
+      ImGui::TableNextColumn();
+      GUIDirectInputButtons(*deviceInfo, buf, 64, 32);
+    }
+    if (buttonCount > 96) {
+      ImGui::TableNextColumn();
+      GUIDirectInputButtons(*deviceInfo, buf, 96, 32);
+    }
 
     ImGui::EndTable();
   }
@@ -234,11 +243,17 @@ void GUI::GUIDirectInputButtons(
   const auto activeColor = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 
   for (auto i = first; i < first + count; ++i) {
+    const auto present = (first + i) < info.mButtons.size();
+    if (!present) {
+      // Currently deciding to just hide buttons that don't exist on this
+      // controller, but the code below will handle rendering them as disabled
+      // too if you remove this break
+      break;
+    }
+
     ImGui::PushID(i);
 
     const auto y = ImGui::GetCursorScreenPos().y;
-
-    const auto present = (first + i) < info.mButtons.size();
 
     const auto pressed = present
       ? (
