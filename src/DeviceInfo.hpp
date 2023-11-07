@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: ISC
 #pragma once
 
+#include <winrt/base.h>
+
 #include <vector>
 
 #include "ControlInfo.hpp"
@@ -12,6 +14,7 @@ struct DeviceInfo {
   virtual ~DeviceInfo() = 0;
 
   std::string mName;
+  winrt::guid mGuid;
 
   std::vector<AxisInfo> mAxes;
   std::vector<ButtonInfo> mButtons;

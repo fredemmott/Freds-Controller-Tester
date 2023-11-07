@@ -12,7 +12,9 @@
 namespace FredEmmott::ControllerTester {
 
 struct DirectInputDeviceInfo final : public DeviceInfo {
-  DirectInputDeviceInfo(const winrt::com_ptr<IDirectInputDevice8>&);
+  DirectInputDeviceInfo(
+    const DIDEVICEINSTANCE&,
+    const winrt::com_ptr<IDirectInputDevice8>&);
   ~DirectInputDeviceInfo();
 
   DirectInputDeviceInfo() = delete;

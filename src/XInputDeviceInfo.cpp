@@ -8,6 +8,34 @@
 
 namespace FredEmmott::ControllerTester {
 
+// Random, to give us persistent but unique identifiers
+static std::array<winrt::guid, XUSER_MAX_COUNT> USER_GUIDS {
+  // {BC4F9F2C-3AD4-492D-AD19-91ED4230BA7D}
+  GUID {
+    0xbc4f9f2c,
+    0x3ad4,
+    0x492d,
+    {0xad, 0x19, 0x91, 0xed, 0x42, 0x30, 0xba, 0x7d}},
+  // {7F043942-AADC-4A39-A72E-00DE774EEDC0}
+  GUID {
+    0x7f043942,
+    0xaadc,
+    0x4a39,
+    {0xa7, 0x2e, 0x0, 0xde, 0x77, 0x4e, 0xed, 0xc0}},
+  // {E1E1B5AC-7246-4478-A61F-945DA8E242A9}
+  GUID {
+    0xe1e1b5ac,
+    0x7246,
+    0x4478,
+    {0xa6, 0x1f, 0x94, 0x5d, 0xa8, 0xe2, 0x42, 0xa9}},
+  // {BBFF57E9-12E1-4433-9A1E-6CDBEE7AA122}
+  GUID {
+    0xbbff57e9,
+    0x12e1,
+    0x4433,
+    {0x9a, 0x1e, 0x6c, 0xdb, 0xee, 0x7a, 0xa1, 0x22}},
+};
+
 struct XInputDeviceInfo::EmulatedDIState {
   LONG mLeftX;
   LONG mLeftY;
@@ -15,23 +43,26 @@ struct XInputDeviceInfo::EmulatedDIState {
   LONG mRightY;
   LONG mLeftTrigger;
   LONG mRightTrigger;
+
+  LONG mHat {-1};
+
   uint8_t mButtonA;
   uint8_t mButtonB;
   uint8_t mButtonX;
   uint8_t mButtonY;
   uint8_t mLeftShoulder;
   uint8_t mRightShoulder;
-
-  LONG mHat {-1};
 };
 
 XInputDeviceInfo::XInputDeviceInfo(DWORD userIndex) : mUserIndex(userIndex) {
+  assert(userIndex < XUSER_MAX_COUNT);
   XINPUT_STATE state;
   if (XInputGetState(mUserIndex, &state) != ERROR_SUCCESS) {
     return;
   }
 
   mName = std::format("XInput {}", userIndex + 1);
+  mGuid = USER_GUIDS[mUserIndex];
 
   mAxes = {
     AxisInfo {
@@ -109,17 +140,6 @@ XInputDeviceInfo::XInputDeviceInfo(DWORD userIndex) : mUserIndex(userIndex) {
 }
 
 XInputDeviceInfo::~XInputDeviceInfo() {
-}
-
-std::vector<XInputDeviceInfo> XInputDeviceInfo::GetAll() {
-  std::vector<XInputDeviceInfo> ret;
-  for (int i = 0; i < XUSER_MAX_COUNT; ++i) {
-    XInputDeviceInfo it(i);
-    if (!it.mAxes.empty()) {
-      ret.push_back(std::move(it));
-    }
-  }
-  return ret;
 }
 
 void XInputDeviceInfo::Poll() {

@@ -23,8 +23,6 @@ struct XInputDeviceInfo final : public DeviceInfo {
   virtual void Poll() override;
   virtual std::vector<std::byte> GetState() override;
 
-  static std::vector<XInputDeviceInfo> GetAll();
-
  private:
   struct EmulatedDIState;
   DWORD mUserIndex;

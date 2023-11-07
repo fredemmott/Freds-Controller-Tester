@@ -13,10 +13,12 @@
 #include <numbers>
 
 #include <ShlObj_core.h>
+#include <Xinput.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
 
 #include "Config.hpp"
+#include "XInputDeviceInfo.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::ControllerTester {
@@ -106,49 +108,64 @@ void GUI::Run() {
 }
 
 void GUI::GUIControllerTabs() {
-  const auto controllers = GetDirectInputControllers(mDI);
+  std::vector<DeviceInfo*> controllers;
+  for (auto i = 0; i < XUSER_MAX_COUNT; ++i) {
+    auto it = this->GetXInputDeviceInfo(i);
+    if (it) {
+      controllers.push_back(it);
+    }
+  }
 
-  for (auto dit = mDirectInputDevices.begin();
-       dit != mDirectInputDevices.end();) {
-    auto cit = std::ranges::find_if(controllers, [dit](const auto& device) {
-      const auto& [guid, details] = *dit;
-      return guid == winrt::guid(device.guidInstance);
-    });
-    if (cit == controllers.end()) {
-      dit = mDirectInputDevices.erase(dit);
-    } else {
-      ++dit;
+  {
+    const auto instances = GetDirectInputControllers(mDI);
+
+    for (auto dit = mDirectInputDevices.begin();
+         dit != mDirectInputDevices.end();) {
+      auto cit = std::ranges::find_if(instances, [dit](const auto& device) {
+        const auto& [guid, details] = *dit;
+        return guid == winrt::guid(device.guidInstance);
+      });
+      if (cit == instances.end()) {
+        dit = mDirectInputDevices.erase(dit);
+      } else {
+        ++dit;
+      }
+    }
+
+    for (const auto& instance: instances) {
+      controllers.push_back(this->GetDirectInputDeviceInfo(instance));
     }
   }
 
   ImGui::BeginTabBar("##Controllers");
 
-  for (const DIDEVICEINSTANCE& controller: controllers) {
-    winrt::guid guid {controller.guidInstance};
-    const auto guidStr = winrt::to_string(winrt::to_hstring(guid));
+  for (auto controller: controllers) {
+    const auto guidStr = winrt::to_string(winrt::to_hstring(controller->mGuid));
     ImGui::PushID(guidStr.c_str());
-    GUIDirectInputTab(controller);
+    GUIControllerTab(controller);
     ImGui::PopID();
   }
 
   ImGui::EndTabBar();
 }
 
-void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
-  if (!ImGui::BeginTabItem(device.tszProductName)) {
+void GUI::GUIControllerTab(DeviceInfo* device) {
+  if (!ImGui::BeginTabItem(device->mName.c_str())) {
     return;
   }
 
-  auto deviceInfo = this->GetDirectInputDeviceInfo(device);
-  assert(deviceInfo);
-  deviceInfo->Poll();
-
-  auto state = deviceInfo->GetState();
+  device->Poll();
+  auto state = device->GetState();
+  if (state.empty()) {
+    ImGui::TextDisabled("Couldn't read controller state.");
+    ImGui::EndTabItem();
+    return;
+  }
 
   {
-    const auto fixedColumns = (deviceInfo->mAxes.empty() ? 0 : 1)
-      + (deviceInfo->mHats.empty() ? 0 : 1);
-    const auto buttonCount = deviceInfo->mButtons.size();
+    const auto fixedColumns
+      = (device->mAxes.empty() ? 0 : 1) + (device->mHats.empty() ? 0 : 1);
+    const auto buttonCount = device->mButtons.size();
     constexpr auto buttonsPerColumn = 16;
     const auto columnCount = (buttonCount == 0)
       ? fixedColumns
@@ -170,22 +187,22 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
     ImGui::TableNextRow();
 
-    if (!deviceInfo->mAxes.empty()) {
+    if (!device->mAxes.empty()) {
       ImGui::TableNextColumn();
       ImGui::BeginChild("Axes Scroll", {-FLT_MIN, 0});
-      GUIDirectInputAxes(*deviceInfo, buf);
+      GUIControllerAxes(device, buf);
       ImGui::EndChild();
     }
 
-    if (!deviceInfo->mHats.empty()) {
+    if (!device->mHats.empty()) {
       ImGui::TableNextColumn();
-      GUIDirectInputHats(*deviceInfo, buf);
+      GUIControllerHats(device, buf);
     }
 
     for (int firstButton = 0; firstButton < buttonCount;
          firstButton += buttonsPerColumn) {
       ImGui::TableNextColumn();
-      GUIDirectInputButtons(*deviceInfo, buf, firstButton, buttonsPerColumn);
+      GUIControllerButtons(device, buf, firstButton, buttonsPerColumn);
     }
 
     ImGui::EndTable();
@@ -234,7 +251,7 @@ GetArrowCoords(const ImVec2& topLeft, float scale, float rotation) {
   return ret;
 }
 
-void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
+void GUI::GUIControllerHats(DeviceInfo* info, std::byte* state) {
   auto drawList = ImGui::GetWindowDrawList();
 
   const auto color = ImGui::GetColorU32(ImGuiCol_Text);
@@ -245,13 +262,13 @@ void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
 
   const auto& style = ImGui::GetStyle();
   float yOffset = style.FramePadding.y;
-  for (auto& hat: info.mHats) {
+  for (auto& hat: info->mHats) {
     const auto y = ImGui::GetCursorScreenPos().y + yOffset;
     yOffset = 0;
     const ImVec2 center {x + (diameter / 2), y + (diameter / 2)};
     drawList->AddCircle(center, diameter / 2, color, 0, borderThickness);
 
-    const auto value = *reinterpret_cast<DWORD*>(state + hat.mDataOffset);
+    const auto value = *reinterpret_cast<LONG*>(state + hat.mDataOffset);
     const bool centered = (value == -1) || (value & 0xffff) == 0xffff;
     if (centered) {
       const auto scale = 0.3f;
@@ -317,7 +334,7 @@ void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
         fullRange = 0xffff;
     }
 
-    ImGui::PushID(winrt::to_string(winrt::to_hstring(hat.mGuid)).c_str());
+    ImGui::PushID(hat.mDataOffset);
     ImGui::BeginGroup();
     ImGui::Dummy({diameter, diameter});
     ImGui::SameLine();
@@ -395,11 +412,11 @@ void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
   }
 }
 
-void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
+void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
   const auto height = ImGui::GetTextLineHeight() * 3;
 
   float maxLabelWidth = 0;
-  for (const auto& axis: info.mAxes) {
+  for (const auto& axis: info->mAxes) {
     const auto thisWidth = ImGui::CalcTextSize(axis.mName.c_str()).x;
     if (thisWidth > maxLabelWidth) {
       maxLabelWidth = thisWidth;
@@ -409,15 +426,14 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
   const auto plotWidth
     = -(maxLabelWidth + style.ScrollbarSize + style.FramePadding.x);
 
-  for (auto& axis: info.mAxes) {
-    const auto value = *reinterpret_cast<DWORD*>(state + axis.mDataOffset);
+  for (auto& axis: info->mAxes) {
+    const auto value = *reinterpret_cast<LONG*>(state + axis.mDataOffset);
     if (axis.mValues.empty()) {
       axis.mValues.resize(Config::AXIS_HISTORY_FRAMES, value);
     } else {
       assert(axis.mValues.size() == Config::AXIS_HISTORY_FRAMES);
       axis.mValues.erase(axis.mValues.begin());
-      axis.mValues.push_back(
-        *reinterpret_cast<DWORD*>(state + axis.mDataOffset));
+      axis.mValues.push_back(value);
     }
 
     std::vector<float> values;
@@ -442,7 +458,7 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
     axis.mMinSeen = std::min<LONG>(axis.mMinSeen, value);
     axis.mMaxSeen = std::max<LONG>(axis.mMaxSeen, value);
 
-    ImGui::PushID(winrt::to_string(winrt::to_hstring(axis.mGuid)).c_str());
+    ImGui::PushID(axis.mDataOffset);
 
     enum class TestedRange {
       Default,
@@ -535,12 +551,12 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
   }
 }
 
-void GUI::GUIDirectInputButtons(
-  DirectInputDeviceInfo& info,
+void GUI::GUIControllerButtons(
+  DeviceInfo* info,
   std::byte* state,
   size_t first,
   size_t count) {
-  const auto buttonCount = info.mButtons.size();
+  const auto buttonCount = info->mButtons.size();
   if (first >= buttonCount) {
     // Currently deciding to just hide buttons that don't exist on this
     // controller, but the code below will handle rendering them as disabled
@@ -577,7 +593,7 @@ void GUI::GUIDirectInputButtons(
 
     const auto pressed = present
       ? (
-        (*reinterpret_cast<uint8_t*>(state + info.mButtons.at(i).mDataOffset))
+        (*reinterpret_cast<uint8_t*>(state + info->mButtons.at(i).mDataOffset))
         & 0x80)
       : false;
     // Draw fill
@@ -601,7 +617,7 @@ void GUI::GUIDirectInputButtons(
       ImGui::Text("%s", std::format("Button {}", i).c_str());
       ImGui::EndDisabled();
     } else {
-      auto& button = info.mButtons.at(i);
+      auto& button = info->mButtons.at(i);
 
       if (pressed) {
         button.mSeenOn = true;
@@ -632,10 +648,33 @@ DirectInputDeviceInfo* GUI::GetDirectInputDeviceInfo(
 
   winrt::check_hresult(mDI->CreateDevice(guid, device.put(), nullptr));
 
-  DirectInputDeviceInfo ret {device};
+  DirectInputDeviceInfo ret {didi, device};
   ret.mName = didi.tszProductName;
+  ret.mGuid = didi.guidInstance;
 
   auto [it, inserted] = mDirectInputDevices.try_emplace(guid, std::move(ret));
+  return &it->second;
+}
+
+XInputDeviceInfo* GUI::GetXInputDeviceInfo(DWORD userIndex) {
+  XINPUT_STATE state;
+  if (XInputGetState(userIndex, &state) != ERROR_SUCCESS) {
+    if (mXInputDevices.contains(userIndex)) {
+      mXInputDevices.erase(userIndex);
+    }
+    return nullptr;
+  }
+
+  if (mXInputDevices.contains(userIndex)) {
+    return &mXInputDevices.at(userIndex);
+  }
+
+  XInputDeviceInfo ret {userIndex};
+  if (ret.mAxes.empty()) {
+    return nullptr;
+  }
+
+  auto [it, inserted] = mXInputDevices.try_emplace(userIndex, std::move(ret));
   return &it->second;
 }
 

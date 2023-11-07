@@ -87,6 +87,7 @@ BOOL DirectInputDeviceInfo::CBEnumDeviceObjects(
 }
 
 DirectInputDeviceInfo::DirectInputDeviceInfo(
+  const DIDEVICEINSTANCE& instance,
   const winrt::com_ptr<IDirectInputDevice8>& device)
   : mDevice(device) {
   if (!mDevice) {
@@ -129,7 +130,7 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
       .dwType = DIDFT_ANYINSTANCE | DIDFT_AXIS,
     });
     axis.mDataOffset = offset;
-    offset += sizeof(DWORD);
+    offset += sizeof(LONG);
   }
   // Hats before buttons as they still need to be 4-byte aligned
   for (auto& hat: mHats) {
@@ -139,7 +140,7 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
       .dwType = DIDFT_ANYINSTANCE | DIDFT_POV,
     });
     hat.mDataOffset = offset;
-    offset += sizeof(DWORD);
+    offset += sizeof(LONG);
   }
   for (auto& button: mButtons) {
     objectFormats.push_back(DIOBJECTDATAFORMAT {

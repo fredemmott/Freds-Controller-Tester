@@ -14,8 +14,11 @@
 
 #include "ControlInfo.hpp"
 #include "DirectInputDeviceInfo.hpp"
+#include "XInputDeviceInfo.hpp"
 
 namespace FredEmmott::ControllerTester {
+
+struct DeviceInfo;
 
 class GUI final {
  public:
@@ -25,20 +28,22 @@ class GUI final {
  private:
   winrt::com_ptr<IDirectInput8> mDI;
   std::unordered_map<winrt::guid, DirectInputDeviceInfo> mDirectInputDevices;
+  std::unordered_map<DWORD, XInputDeviceInfo> mXInputDevices;
 
   void InitFonts();
 
   void GUIControllerTabs();
-  void GUIDirectInputTab(const DIDEVICEINSTANCE&);
-  void GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state);
-  void GUIDirectInputButtons(
-    DirectInputDeviceInfo& info,
+  void GUIControllerTab(DeviceInfo*);
+  void GUIControllerAxes(DeviceInfo* info, std::byte* state);
+  void GUIControllerButtons(
+    DeviceInfo* info,
     std::byte* state,
     size_t first,
     size_t count);
-  void GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state);
+  void GUIControllerHats(DeviceInfo* info, std::byte* state);
 
   DirectInputDeviceInfo* GetDirectInputDeviceInfo(const DIDEVICEINSTANCE&);
+  XInputDeviceInfo* GetXInputDeviceInfo(DWORD userIndex);
 };
 
 }// namespace FredEmmott::ControllerTester

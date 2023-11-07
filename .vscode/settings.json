@@ -101,7 +101,8 @@
         "coroutine": "cpp",
         "csignal": "cpp",
         "regex": "cpp",
-        "source_location": "cpp"
+        "source_location": "cpp",
+        "numbers": "cpp"
     },
     "editor.formatOnSave": true,
     "cmake.configureOnOpen": true,
