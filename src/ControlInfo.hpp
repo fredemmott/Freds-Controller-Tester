@@ -6,7 +6,6 @@
 
 #include <winrt/base.h>
 
-#include <chrono>
 #include <limits>
 #include <string>
 
@@ -34,7 +33,6 @@ struct ButtonInfo final {
   bool mLastState {false};
   bool mSeenOff {false};
   bool mSeenOn {false};
-  std::chrono::steady_clock::time_point mOffSince;
 
   DWORD mDataOffset {};
 };

@@ -20,6 +20,7 @@ add_executable(
   main.cpp
   DeviceInfo.cpp
   DirectInputDeviceInfo.cpp
+  XInputDeviceInfo.cpp
   manifest.xml
 )
 
@@ -36,6 +37,7 @@ target_link_libraries(
   ImGui-SFML::ImGui-SFML
   Dinput8
   dxguid
+  XInput
 )
 
 target_compile_definitions(

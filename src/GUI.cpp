@@ -633,6 +633,7 @@ DirectInputDeviceInfo* GUI::GetDirectInputDeviceInfo(
   winrt::check_hresult(mDI->CreateDevice(guid, device.put(), nullptr));
 
   DirectInputDeviceInfo ret {device};
+  ret.mName = didi.tszProductName;
 
   auto [it, inserted] = mDirectInputDevices.try_emplace(guid, std::move(ret));
   return &it->second;

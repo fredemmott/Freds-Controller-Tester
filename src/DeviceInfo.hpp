@@ -11,6 +11,8 @@ namespace FredEmmott::ControllerTester {
 struct DeviceInfo {
   virtual ~DeviceInfo() = 0;
 
+  std::string mName;
+
   std::vector<AxisInfo> mAxes;
   std::vector<ButtonInfo> mButtons;
   std::vector<HatInfo> mHats;
