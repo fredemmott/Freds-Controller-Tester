@@ -148,8 +148,11 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
   {
     const auto buttonCount = deviceInfo->mButtons.size();
-    const auto columnCount
-      = (buttonCount == 0) ? 1 : (((buttonCount - 1) / 32) + 1);
+    constexpr auto buttonsPerColumn = 16;
+    const auto columnCount = (buttonCount == 0)
+      ? 1
+      : static_cast<unsigned int>(
+        (std::ceill(static_cast<float>(buttonCount) / buttonsPerColumn) + 1));
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
     ImGui::TableSetupColumn("##Axes", ImGuiTableColumnFlags_WidthStretch);
@@ -170,20 +173,10 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
       ImGui::EndChild();
     }
 
-    ImGui::TableNextColumn();
-    GUIDirectInputButtons(*deviceInfo, buf, 0, 32);
-
-    if (buttonCount > 32) {
+    for (int firstButton = 0; firstButton < buttonCount;
+         firstButton += buttonsPerColumn) {
       ImGui::TableNextColumn();
-      GUIDirectInputButtons(*deviceInfo, buf, 32, 32);
-    }
-    if (buttonCount > 64) {
-      ImGui::TableNextColumn();
-      GUIDirectInputButtons(*deviceInfo, buf, 64, 32);
-    }
-    if (buttonCount > 96) {
-      ImGui::TableNextColumn();
-      GUIDirectInputButtons(*deviceInfo, buf, 96, 32);
+      GUIDirectInputButtons(*deviceInfo, buf, firstButton, buttonsPerColumn);
     }
 
     ImGui::EndTable();
@@ -194,6 +187,17 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
 void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
   const auto height = ImGui::GetTextLineHeight() * 3;
+
+  float maxLabelWidth = 0;
+  for (const auto& axis: info.mAxes) {
+    const auto thisWidth = ImGui::CalcTextSize(axis.mName.c_str()).x;
+    if (thisWidth > maxLabelWidth) {
+      maxLabelWidth = thisWidth;
+    }
+  }
+  const auto& style = ImGui::GetStyle();
+  const auto plotWidth
+    = -(maxLabelWidth + style.ScrollbarSize + style.FramePadding.x);
 
   for (auto& axis: info.mAxes) {
     const auto value = *reinterpret_cast<DWORD*>(state + axis.mDataOffset);
@@ -236,6 +240,8 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
     if (seenFullRange) {
       ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
     }
+
+    ImGui::SetNextItemWidth(plotWidth);
 
     ImGui::PlotLines(
       axis.mName.c_str(),
