@@ -516,6 +516,7 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
           ImGui::PushStyleColor(ImGuiCol_Text, Config::WARNING_COLOR);
           break;
         default:
+          break;
       }
       ImGui::Text("Lowest tested: %ld", axis.mMinSeen);
       ImGui::Text("Highest tested: %ld", axis.mMaxSeen);
