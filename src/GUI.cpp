@@ -155,8 +155,12 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
     const auto buf = state.data();
 
-    ImGui::TableNextColumn();
-    GUIDirectInputAxes(*deviceInfo, buf);
+    {
+      ImGui::TableNextColumn();
+      ImGui::BeginChild("Axes Scroll");
+      GUIDirectInputAxes(*deviceInfo, buf);
+      ImGui::EndChild();
+    }
 
     ImGui::TableNextColumn();
     GUIDirectInputButtons(*deviceInfo, buf, 0, 32);
