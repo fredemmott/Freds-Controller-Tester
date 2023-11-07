@@ -343,6 +343,52 @@ void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
           ImGui::Text("36,000-way hat");
           break;
       }
+
+      if (hat.mType != HatType::Other) {
+        std::vector<std::string> seen;
+        if (hat.mSeenFlags & HatInfo::SEEN_CENTER) {
+          seen.push_back("C");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_NORTH) {
+          seen.push_back("N");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_NORTHEAST) {
+          seen.push_back("NE");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_EAST) {
+          seen.push_back("E");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_SOUTHEAST) {
+          seen.push_back("SE");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_SOUTH) {
+          seen.push_back("S");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_SOUTHWEST) {
+          seen.push_back("SW");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_WEST) {
+          seen.push_back("W");
+        }
+        if (hat.mSeenFlags & HatInfo::SEEN_NORTHWEST) {
+          seen.push_back("NW");
+        }
+
+        if (seen.empty()) {
+          ImGui::Text("Tested: [none]");
+        } else {
+          std::string text = std::format("Tested: {}", seen.front());
+          for (auto it = seen.begin() + 1; it != seen.end(); ++it) {
+            text += std::format(", {}", *it);
+          }
+          if ((hat.mSeenFlags & fullRange) == fullRange) {
+            ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "%s", text.c_str());
+          } else {
+            ImGui::Text("%s", text.c_str());
+          }
+        }
+      }
+
       ImGui::Spacing();
       ImGui::Text("Value: %ld", value);
       ImGui::EndTooltip();
