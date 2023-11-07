@@ -507,12 +507,21 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
 
     if (ImGui::BeginItemTooltip()) {
       ImGui::Text(
-        "Lowest possible: %ld\nHighest possible: %ld\n"
-        "Lowest seen: %ld\nHighest seen: %ld",
-        axis.mMin,
-        axis.mMax,
-        axis.mMinSeen,
-        axis.mMaxSeen);
+        "Lowest possible: %ld\nHighest possible: %ld", axis.mMin, axis.mMax);
+      switch (testedRange) {
+        case TestedRange::FullRange:
+          ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.f, 1.0f});
+          break;
+        case TestedRange::NearFullRange:
+          ImGui::PushStyleColor(ImGuiCol_Text, Config::WARNING_COLOR);
+          break;
+        default:
+      }
+      ImGui::Text("Lowest tested: %ld", axis.mMinSeen);
+      ImGui::Text("Highest tested: %ld", axis.mMaxSeen);
+      if (testedRange != TestedRange::Default) {
+        ImGui::PopStyleColor();
+      }
       ImGui::Spacing();
       ImGui::Text("Value: %ld", value);
       if (testedRange == TestedRange::NearFullRange) {
