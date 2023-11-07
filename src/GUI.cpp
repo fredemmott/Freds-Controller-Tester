@@ -91,12 +91,10 @@ void GUI::Run() {
         | ImGuiWindowFlags_NoScrollWithMouse);
 
     GUIControllerTabs();
-
     ImGui::End();
 
-    ImGui::ShowDemoWindow();
-
     ImGui::SFML::Render(window);
+
     window.display();
   }
   ImGui::PopStyleColor();
@@ -154,11 +152,20 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
       = (buttonCount == 0) ? 1 : (((buttonCount - 1) / 32) + 1);
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
+    ImGui::TableSetupColumn("##Axes", ImGuiTableColumnFlags_WidthStretch);
+    for (int i = 1; i < columnCount; ++i) {
+      ImGui::PushID(i);
+      ImGui::TableSetupColumn(
+        "##ButtonColumn", ImGuiTableColumnFlags_WidthFixed);
+      ImGui::PopID();
+    }
+
     const auto buf = state.data();
 
+    ImGui::TableNextRow();
     {
       ImGui::TableNextColumn();
-      ImGui::BeginChild("Axes Scroll");
+      ImGui::BeginChild("Axes Scroll", {-FLT_MIN, 0});
       GUIDirectInputAxes(*deviceInfo, buf);
       ImGui::EndChild();
     }
