@@ -238,6 +238,9 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
     if (seenFullRange) {
       ImGui::PopStyleColor();
     }
+
+    ImGui::SetItemTooltip(
+      "Min: %ld\nMax: %ld\nRaw: %ld", axis.mMin, axis.mMax, value);
   }
 }
 
