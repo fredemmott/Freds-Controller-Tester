@@ -1,0 +1,16 @@
+{
+  "dependencies": [
+    {
+      "name": "cppwinrt",
+      "platform": "windows"
+    },
+    {
+      "name": "imgui",
+      "features": [
+        "freetype",
+        "wchar32"
+      ]
+    },
+    "imgui-sfml"
+  ]
+}
