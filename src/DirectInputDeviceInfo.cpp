@@ -5,7 +5,9 @@
 
 namespace FredEmmott::ControllerTester {
 
-static BOOL CBEnumDeviceObjects(LPCDIDEVICEOBJECTINSTANCE it, LPVOID pvRef) {
+BOOL DirectInputDeviceInfo::CBEnumDeviceObjects(
+  LPCDIDEVICEOBJECTINSTANCE it,
+  LPVOID pvRef) {
   auto info = reinterpret_cast<DirectInputDeviceInfo*>(pvRef);
 
   if (it->dwType & DIDFT_AXIS) {
@@ -171,6 +173,27 @@ DirectInputDeviceInfo::~DirectInputDeviceInfo() {
   if (mDevice) {
     mDevice->Unacquire();
   }
+}
+
+void DirectInputDeviceInfo::Poll() {
+  if (!(mNeedsPolling && mDevice)) {
+    return;
+  }
+
+  mDevice->Poll();
+}
+
+std::vector<std::byte> DirectInputDeviceInfo::GetState() {
+  if (!mDevice) {
+    return {};
+  }
+  if (!mDataSize) {
+    return {};
+  }
+
+  std::vector<std::byte> state(mDataSize, {});
+  winrt::check_hresult(mDevice->GetDeviceState(mDataSize, state.data()));
+  return state;
 }
 
 }// namespace FredEmmott::ControllerTester

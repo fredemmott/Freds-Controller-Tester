@@ -18,6 +18,7 @@ add_executable(
   WIN32
   GUI.cpp
   main.cpp
+  DeviceInfo.cpp
   DirectInputDeviceInfo.cpp
   manifest.xml
 )

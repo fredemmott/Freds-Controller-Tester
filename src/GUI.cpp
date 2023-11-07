@@ -141,13 +141,9 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
   auto deviceInfo = this->GetDirectInputDeviceInfo(device);
   assert(deviceInfo);
+  deviceInfo->Poll();
 
-  if (deviceInfo->mNeedsPolling) {
-    deviceInfo->mDevice->Poll();
-  }
-  std::vector<std::byte> state(deviceInfo->mDataSize, {});
-  winrt::check_hresult(
-    deviceInfo->mDevice->GetDeviceState(deviceInfo->mDataSize, state.data()));
+  auto state = deviceInfo->GetState();
 
   {
     const auto fixedColumns = (deviceInfo->mAxes.empty() ? 0 : 1)

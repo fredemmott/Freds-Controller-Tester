@@ -4,6 +4,8 @@
 
 #include <Windows.h>
 
+#include <winrt/base.h>
+
 #include <chrono>
 #include <limits>
 #include <string>
