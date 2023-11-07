@@ -71,9 +71,6 @@ void GUI::Run() {
   }
 
   this->InitFonts();
-  ImGui::PushStyleColor(
-    ImGuiCol_PlotLines, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-
   sf::Clock deltaClock {};
   while (window.isOpen()) {
     sf::Event event {};
@@ -104,7 +101,6 @@ void GUI::Run() {
 
     window.display();
   }
-  ImGui::PopStyleColor();
 
   ImGui::SFML::Shutdown();
 }
@@ -435,7 +431,16 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
         break;
     }
 
+    const bool inDeadZone = (value > (axis.mMin + (fullRange * 0.45)))
+      && (value < (axis.mMax - (fullRange * 0.45)));
+
+    if (!inDeadZone) {
+      ImGui::PushStyleColor(
+        ImGuiCol_PlotLines, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    }
+
     ImGui::SetNextItemWidth(plotWidth);
+
     ImGui::PlotLines(
       axis.mName.c_str(),
       values.data(),
@@ -445,6 +450,10 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       axis.mMin,
       axis.mMax,
       {0, height});
+
+    if (!inDeadZone) {
+      ImGui::PopStyleColor();
+    }
 
     if (testedRange != TestedRange::Default) {
       ImGui::PopStyleColor();
