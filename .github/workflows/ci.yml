@@ -74,10 +74,6 @@ jobs:
         os-arch: [Win64]
         build-type: [RelWithDebInfo, Debug]
         include:
-          - os-arch: Win32
-            runs-on: windows-latest
-            cmake-arch: Win32
-            vcpkg-arch: x86-windows-static
           - os-arch: Win64
             runs-on: windows-latest
             cmake-arch: x64
