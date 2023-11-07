@@ -228,7 +228,7 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       valueStr.c_str(),
       axis.mMin,
       axis.mMax,
-      {-FLT_MIN, height});
+      {0, height});
   }
 }
 
