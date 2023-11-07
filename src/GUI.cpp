@@ -237,6 +237,12 @@ void GUI::GUIDirectInputButtons(
   std::byte* state,
   size_t first,
   size_t count) {
+  if (first >= info.mButtons.size()) {
+    // Currently deciding to just hide buttons that don't exist on this
+    // controller, but the code below will handle rendering them as disabled
+    // too if you remove this, and the break below
+    return;
+  }
   const auto& style = ImGui::GetStyle();
 
   const auto x = ImGui::GetCursorScreenPos().x;
@@ -251,18 +257,19 @@ void GUI::GUIDirectInputButtons(
 
   auto drawList = ImGui::GetWindowDrawList();
 
+  float yOffset = style.FramePadding.y;
+
   for (auto i = first; i < first + count; ++i) {
     const auto present = (first + i) < info.mButtons.size();
     if (!present) {
-      // Currently deciding to just hide buttons that don't exist on this
-      // controller, but the code below will handle rendering them as disabled
-      // too if you remove this break
       break;
     }
 
     ImGui::PushID(i);
 
-    const auto y = ImGui::GetCursorScreenPos().y;
+    // First entry draws too high
+    const auto y = ImGui::GetCursorScreenPos().y + yOffset;
+    yOffset = 0;
 
     const auto pressed = present
       ? (
