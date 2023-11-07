@@ -50,8 +50,15 @@ struct XInputDeviceInfo::EmulatedDIState {
   uint8_t mButtonB;
   uint8_t mButtonX;
   uint8_t mButtonY;
-  uint8_t mLeftShoulder;
-  uint8_t mRightShoulder;
+
+  uint8_t mButtonLeftShoulder;
+  uint8_t mButtonRightShoulder;
+
+  uint8_t mButtonLeftStick;
+  uint8_t mButtonRightStick;
+
+  uint8_t mButtonBack;
+  uint8_t mButtonStart;
 };
 
 XInputDeviceInfo::XInputDeviceInfo(DWORD userIndex) : mUserIndex(userIndex) {
@@ -118,15 +125,31 @@ XInputDeviceInfo::XInputDeviceInfo(DWORD userIndex) : mUserIndex(userIndex) {
     },
     ButtonInfo {
       .mName = "Y",
-      .mDataOffset = offsetof(EmulatedDIState, mButtonX),
+      .mDataOffset = offsetof(EmulatedDIState, mButtonY),
     },
     ButtonInfo {
       .mName = "Left Shoulder",
-      .mDataOffset = offsetof(EmulatedDIState, mLeftShoulder),
+      .mDataOffset = offsetof(EmulatedDIState, mButtonLeftShoulder),
     },
     ButtonInfo {
       .mName = "Right Shoulder",
-      .mDataOffset = offsetof(EmulatedDIState, mRightShoulder),
+      .mDataOffset = offsetof(EmulatedDIState, mButtonRightShoulder),
+    },
+    ButtonInfo {
+      .mName = "Left Stick",
+      .mDataOffset = offsetof(EmulatedDIState, mButtonLeftStick),
+    },
+    ButtonInfo {
+      .mName = "Right Stick",
+      .mDataOffset = offsetof(EmulatedDIState, mButtonRightStick),
+    },
+    ButtonInfo {
+      .mName = "Back",
+      .mDataOffset = offsetof(EmulatedDIState, mButtonBack),
+    },
+    ButtonInfo {
+      .mName = "Start",
+      .mDataOffset = offsetof(EmulatedDIState, mButtonStart),
     },
   };
 
@@ -154,7 +177,7 @@ std::vector<std::byte> XInputDeviceInfo::GetState() {
   const auto& gp = state.Gamepad;
 
   auto testButton = [buttons = gp.wButtons](WORD flag) -> uint8_t {
-    if (buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) {
+    if (buttons & flag) {
       return 0xff;
     }
     return 0;
@@ -171,8 +194,12 @@ std::vector<std::byte> XInputDeviceInfo::GetState() {
     .mButtonB = testButton(XINPUT_GAMEPAD_B),
     .mButtonX = testButton(XINPUT_GAMEPAD_X),
     .mButtonY = testButton(XINPUT_GAMEPAD_Y),
-    .mLeftShoulder = testButton(XINPUT_GAMEPAD_LEFT_SHOULDER),
-    .mRightShoulder = testButton(XINPUT_GAMEPAD_RIGHT_SHOULDER),
+    .mButtonLeftShoulder = testButton(XINPUT_GAMEPAD_LEFT_SHOULDER),
+    .mButtonRightShoulder = testButton(XINPUT_GAMEPAD_RIGHT_SHOULDER),
+    .mButtonLeftStick = testButton(XINPUT_GAMEPAD_LEFT_THUMB),
+    .mButtonRightStick = testButton(XINPUT_GAMEPAD_RIGHT_THUMB),
+    .mButtonBack = testButton(XINPUT_GAMEPAD_BACK),
+    .mButtonStart = testButton(XINPUT_GAMEPAD_START),
   };
 
   constexpr auto DPAD_NE = XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_RIGHT;
