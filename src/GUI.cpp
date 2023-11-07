@@ -220,6 +220,11 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       axis.mSeenMax = true;
     }
 
+    const auto seenFullRange = (axis.mSeenMin && axis.mSeenMax);
+    if (seenFullRange) {
+      ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
+    }
+
     ImGui::PlotLines(
       axis.mName.c_str(),
       values.data(),
@@ -229,6 +234,10 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       axis.mMin,
       axis.mMax,
       {0, height});
+
+    if (seenFullRange) {
+      ImGui::PopStyleColor();
+    }
   }
 }
 
