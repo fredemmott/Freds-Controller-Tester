@@ -169,9 +169,14 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
 
 void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
   for (auto& axis: info.mAxes) {
-    axis.mValues.push_back(*reinterpret_cast<DWORD*>(state + axis.mDataOffset));
-    if (axis.mValues.size() > Config::AXIS_HISTORY_FRAMES) {
+    const auto value = *reinterpret_cast<DWORD*>(state + axis.mDataOffset);
+    if (axis.mValues.empty()) {
+      axis.mValues.resize(Config::AXIS_HISTORY_FRAMES, value);
+    } else {
+      assert(axis.mValues.size() == Config::AXIS_HISTORY_FRAMES);
       axis.mValues.erase(axis.mValues.begin());
+      axis.mValues.push_back(
+        *reinterpret_cast<DWORD*>(state + axis.mDataOffset));
     }
 
     std::vector<float> values;
@@ -180,27 +185,24 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
     }
 
     std::string valueStr;
-    if (!values.empty()) {
-      const auto value = values.back();
-      if (axis.mMin >= 0) {
-        valueStr = std::format(
-          "{:0.0f}%", (100.0f * (value - axis.mMin)) / (axis.mMax - axis.mMin));
-      } else if (std::abs(axis.mMax / axis.mMin) <= 0.001) {
-        if (value >= 0) {
-          valueStr = std::format("{:0.0f}%", (100.0f * value / axis.mMax));
-        } else {
-          valueStr = std::format("{:0.0f}%", (-100.0f * value / axis.mMin));
-        }
+    if (axis.mMin >= 0) {
+      valueStr = std::format(
+        "{:0.0f}%", (100.0f * (value - axis.mMin)) / (axis.mMax - axis.mMin));
+    } else if (std::abs(axis.mMax / axis.mMin) <= 0.001) {
+      if (value >= 0) {
+        valueStr = std::format("{:0.0f}%", (100.0f * value / axis.mMax));
       } else {
-        valueStr = std::to_string(value);
+        valueStr = std::format("{:0.0f}%", (-100.0f * value / axis.mMin));
       }
+    } else {
+      valueStr = std::to_string(value);
+    }
 
-      if (value == axis.mMin) {
-        axis.mSeenMin = true;
-      }
-      if (value == axis.mMax) {
-        axis.mSeenMax = true;
-      }
+    if (value == axis.mMin) {
+      axis.mSeenMin = true;
+    }
+    if (value == axis.mMax) {
+      axis.mSeenMax = true;
     }
 
     ImGui::PlotLines(
