@@ -401,22 +401,41 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       valueStr = std::to_string(value);
     }
 
-    if (value == axis.mMin) {
-      axis.mSeenMin = true;
-    }
-    if (value == axis.mMax) {
-      axis.mSeenMax = true;
-    }
+    axis.mMinSeen = std::min<LONG>(axis.mMinSeen, value);
+    axis.mMaxSeen = std::max<LONG>(axis.mMaxSeen, value);
 
     ImGui::PushID(winrt::to_string(winrt::to_hstring(axis.mGuid)).c_str());
 
-    const auto seenFullRange = (axis.mSeenMin && axis.mSeenMax);
-    if (seenFullRange) {
-      ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
+    enum class TestedRange {
+      Default,
+      NearFullRange,
+      FullRange,
+    };
+
+    const auto fullRange = axis.mMax - axis.mMin;
+    constexpr auto nearScale = 0.05f;
+
+    TestedRange testedRange {TestedRange::Default};
+    if (axis.mMinSeen == axis.mMin && axis.mMaxSeen == axis.mMax) {
+      testedRange = TestedRange::FullRange;
+    } else if (
+      axis.mMinSeen < axis.mMin + (fullRange * nearScale)
+      && axis.mMaxSeen > (axis.mMax - (fullRange * nearScale))) {
+      testedRange = TestedRange::NearFullRange;
+    }
+
+    switch (testedRange) {
+      case TestedRange::FullRange:
+        ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
+        break;
+      case TestedRange::NearFullRange:
+        ImGui::PushStyleColor(ImGuiCol_Text, Config::WARNING_COLOR);
+        break;
+      default:
+        break;
     }
 
     ImGui::SetNextItemWidth(plotWidth);
-
     ImGui::PlotLines(
       axis.mName.c_str(),
       values.data(),
@@ -427,12 +446,29 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       axis.mMax,
       {0, height});
 
-    if (seenFullRange) {
+    if (testedRange != TestedRange::Default) {
       ImGui::PopStyleColor();
     }
 
-    ImGui::SetItemTooltip(
-      "Min: %ld\nMax: %ld\nRaw: %ld", axis.mMin, axis.mMax, value);
+    if (ImGui::BeginItemTooltip()) {
+      ImGui::Text(
+        "Lowest possible: %ld\nHighest possible: %ld\n"
+        "Lowest seen: %ld\nHighest seen: %ld",
+        axis.mMin,
+        axis.mMax,
+        axis.mMinSeen,
+        axis.mMaxSeen);
+      ImGui::Spacing();
+      ImGui::Text("Value: %ld", value);
+      if (testedRange == TestedRange::NearFullRange) {
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, Config::WARNING_COLOR);
+        ImGui::Text("Tested > 95%% but < 100%% of full range;");
+        ImGui::Text("the controller may need calibrating.");
+        ImGui::PopStyleColor();
+      }
+      ImGui::EndTooltip();
+    }
 
     ImGui::PopID();
   }

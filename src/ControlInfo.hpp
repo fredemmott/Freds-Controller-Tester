@@ -14,11 +14,11 @@ struct AxisInfo final {
   std::string mName;
   winrt::guid mGuid {};
 
-  LONG mMin {std::numeric_limits<LONG>::min()};
-  LONG mMax {std::numeric_limits<LONG>::max()};
+  LONG mMin {std::numeric_limits<LONG>::max()};
+  LONG mMax {std::numeric_limits<LONG>::min()};
 
-  bool mSeenMin {false};
-  bool mSeenMax {false};
+  LONG mMinSeen {std::numeric_limits<LONG>::max()};
+  LONG mMaxSeen {std::numeric_limits<LONG>::min()};
 
   std::vector<DWORD> mValues;
 
