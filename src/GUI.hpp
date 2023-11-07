@@ -36,6 +36,7 @@ class GUI final {
     std::byte* state,
     size_t first,
     size_t count);
+  void GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state);
 
   DirectInputDeviceInfo* GetDirectInputDeviceInfo(const DIDEVICEINSTANCE&);
 };

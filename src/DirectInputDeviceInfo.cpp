@@ -30,6 +30,7 @@ static BOOL CBEnumDeviceObjects(LPCDIDEVICEOBJECTINSTANCE it, LPVOID pvRef) {
     });
     return DIENUM_CONTINUE;
   }
+
   if (it->dwType & DIDFT_BUTTON) {
     if (it->dwFlags & DIDOI_POLLED) {
       info->mNeedsPolling = true;
@@ -39,6 +40,44 @@ static BOOL CBEnumDeviceObjects(LPCDIDEVICEOBJECTINSTANCE it, LPVOID pvRef) {
       .mName = {it->tszName},
       .mGuid = it->guidType,
     });
+    return DIENUM_CONTINUE;
+  }
+
+  if (it->dwType & DIDFT_POV) {
+    if (it->dwFlags & DIDOI_POLLED) {
+      info->mNeedsPolling = true;
+    }
+
+    DIPROPDWORD granularity {
+      .diph = {
+        .dwSize = sizeof(DIPROPDWORD),
+        .dwHeaderSize = sizeof(DIPROPHEADER),
+        .dwObj = it->dwType,
+        .dwHow = DIPH_BYID,
+      },
+    };
+    winrt::check_hresult(
+      info->mDevice->GetProperty(DIPROP_GRANULARITY, &granularity.diph));
+
+    HatType hatType;
+    switch (granularity.dwData) {
+      case 4500:
+        hatType = HatType::EightWay;
+        break;
+      case 9000:
+        hatType = HatType::FourWay;
+        break;
+      default:
+        hatType = HatType::Other;
+        break;
+    }
+
+    info->mHats.push_back(HatInfo {
+      .mName = {it->tszName},
+      .mGuid = it->guidType,
+      .mType = hatType,
+    });
+
     return DIENUM_CONTINUE;
   }
 
@@ -54,7 +93,7 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
 
   // Populate controls
   winrt::check_hresult(mDevice->EnumObjects(
-    &CBEnumDeviceObjects, this, DIDFT_AXIS | DIDFT_BUTTON));
+    &CBEnumDeviceObjects, this, DIDFT_AXIS | DIDFT_BUTTON | DIDFT_POV));
 
   const std::vector<winrt::guid> axisOrder {
     GUID_XAxis,
@@ -88,6 +127,16 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
       .dwType = DIDFT_ANYINSTANCE | DIDFT_AXIS,
     });
     axis.mDataOffset = offset;
+    offset += sizeof(DWORD);
+  }
+  // Hats before buttons as they still need to be 4-byte aligned
+  for (auto& hat: mHats) {
+    objectFormats.push_back(DIOBJECTDATAFORMAT {
+      .pguid = &static_cast<const GUID&>(hat.mGuid),
+      .dwOfs = offset,
+      .dwType = DIDFT_ANYINSTANCE | DIDFT_POV,
+    });
+    hat.mDataOffset = offset;
     offset += sizeof(DWORD);
   }
   for (auto& button: mButtons) {

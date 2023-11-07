@@ -26,6 +26,7 @@ struct DirectInputDeviceInfo {
   winrt::com_ptr<IDirectInputDevice8> mDevice;
   std::vector<AxisInfo> mAxes;
   std::vector<ButtonInfo> mButtons;
+  std::vector<HatInfo> mHats;
 
   bool mNeedsPolling {false};
   DWORD mDataSize {};

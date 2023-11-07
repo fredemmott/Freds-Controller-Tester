@@ -10,6 +10,7 @@
 #include <cassert>
 #include <filesystem>
 #include <format>
+#include <numbers>
 
 #include <ShlObj_core.h>
 #include <imgui.h>
@@ -61,6 +62,12 @@ void GUI::Run() {
   window.setFramerateLimit(Config::MAX_FPS);
   if (!ImGui::SFML::Init(window)) {
     return;
+  }
+
+  {
+    auto& style = ImGui::GetStyle();
+    style.AntiAliasedFill = true;
+    style.AntiAliasedLines = true;
   }
 
   this->InitFonts();
@@ -147,16 +154,20 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
     deviceInfo->mDevice->GetDeviceState(deviceInfo->mDataSize, state.data()));
 
   {
+    const auto fixedColumns = (deviceInfo->mAxes.empty() ? 0 : 1)
+      + (deviceInfo->mHats.empty() ? 0 : 1);
     const auto buttonCount = deviceInfo->mButtons.size();
     constexpr auto buttonsPerColumn = 16;
     const auto columnCount = (buttonCount == 0)
-      ? 1
+      ? fixedColumns
       : static_cast<unsigned int>(
-        (std::ceill(static_cast<float>(buttonCount) / buttonsPerColumn) + 1));
+        (std::ceill(static_cast<float>(buttonCount) / buttonsPerColumn)
+         + fixedColumns));
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
     ImGui::TableSetupColumn("##Axes", ImGuiTableColumnFlags_WidthStretch);
-    for (int i = 1; i < columnCount; ++i) {
+    ImGui::TableSetupColumn("##Hats", ImGuiTableColumnFlags_WidthFixed);
+    for (int i = fixedColumns; i < columnCount; ++i) {
       ImGui::PushID(i);
       ImGui::TableSetupColumn(
         "##ButtonColumn", ImGuiTableColumnFlags_WidthFixed);
@@ -166,11 +177,17 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
     const auto buf = state.data();
 
     ImGui::TableNextRow();
-    {
+
+    if (!deviceInfo->mAxes.empty()) {
       ImGui::TableNextColumn();
       ImGui::BeginChild("Axes Scroll", {-FLT_MIN, 0});
       GUIDirectInputAxes(*deviceInfo, buf);
       ImGui::EndChild();
+    }
+
+    if (!deviceInfo->mHats.empty()) {
+      ImGui::TableNextColumn();
+      GUIDirectInputHats(*deviceInfo, buf);
     }
 
     for (int firstButton = 0; firstButton < buttonCount;
@@ -183,6 +200,161 @@ void GUI::GUIDirectInputTab(const DIDEVICEINSTANCE& device) {
   }
 
   ImGui::EndTabItem();
+}
+
+static std::vector<ImVec2>
+GetArrowCoords(const ImVec2& topLeft, float scale, float rotation) {
+  // Drawing from (-0.5, 0.5) to (0.5, -0.5) to keep the origin
+  // at (0, 0) for simplicity
+  std::vector<ImVec2> ret {
+    {0.0f, 0.5f},
+    {0.4f, 0.1f},
+    {0.1f, 0.1f},
+    {0.1f, -0.5f},
+    {-0.1f, -0.5f},
+    {-0.1f, 0.1f},
+    {-0.4f, 0.1f},
+    {0.0f, 0.5f},
+  };
+
+  const auto sin = std::sin(rotation + std::numbers::pi_v<float>);
+  const auto cos = std::cos(rotation + std::numbers::pi_v<float>);
+  for (auto& point: ret) {
+    // Rotate
+    point = {
+      (point.x * cos) - (point.y * sin),
+      (point.y * cos) + (point.x * sin),
+    };
+
+    // Translate from origin of (0, 0) to origin of (0.5, 0.5)
+    point.x += 0.5;
+    point.y += 0.5;
+
+    // Scale
+    point.x *= scale;
+    point.y *= scale;
+
+    // Translate
+    point.x += topLeft.x;
+    point.y += topLeft.y;
+  }
+
+  return ret;
+}
+
+void GUI::GUIDirectInputHats(DirectInputDeviceInfo& info, std::byte* state) {
+  auto drawList = ImGui::GetWindowDrawList();
+
+  const auto color = ImGui::GetColorU32(ImGuiCol_Text);
+
+  const auto x = ImGui::GetCursorScreenPos().x;
+  const auto diameter = ImGui::GetTextLineHeight() * 2.0f;
+  const auto borderThickness = 1.0f;
+
+  const auto& style = ImGui::GetStyle();
+  float yOffset = style.FramePadding.y;
+  for (auto& hat: info.mHats) {
+    const auto y = ImGui::GetCursorScreenPos().y + yOffset;
+    yOffset = 0;
+    const ImVec2 center {x + (diameter / 2), y + (diameter / 2)};
+    drawList->AddCircle(center, diameter / 2, color, 0, borderThickness);
+
+    const auto value = *reinterpret_cast<DWORD*>(state + hat.mDataOffset);
+    const bool centered = (value == -1) || (value & 0xffff) == 0xffff;
+    if (centered) {
+      const auto scale = 0.3f;
+      drawList->AddCircleFilled(center, diameter * scale / 2, color);
+    } else {
+      constexpr auto scale = 0.6f;
+      const auto offset = (diameter * (1.0f - scale)) / 2;
+
+      const auto points = GetArrowCoords(
+        {x + offset, y + offset},
+        diameter * scale,
+        (value / 36000.0f) * 2 * std::numbers::pi_v<float>);
+
+      drawList->AddConvexPolyFilled(points.data(), points.size(), color);
+    }
+
+    if (hat.mType != HatType::Other) {
+      switch (value) {
+        case 0:
+        case 36000:
+          hat.mSeenFlags |= HatInfo::SEEN_NORTH;
+          break;
+        case 4500:
+          hat.mSeenFlags |= HatInfo::SEEN_NORTHEAST;
+          break;
+        case 9000:
+          hat.mSeenFlags |= HatInfo::SEEN_EAST;
+          break;
+        case 13500:
+          hat.mSeenFlags |= HatInfo::SEEN_SOUTHEAST;
+          break;
+        case 18000:
+          hat.mSeenFlags |= HatInfo::SEEN_SOUTH;
+          break;
+        case 22500:
+          hat.mSeenFlags |= HatInfo::SEEN_SOUTHWEST;
+          break;
+        case 27000:
+          hat.mSeenFlags |= HatInfo::SEEN_WEST;
+          break;
+        case 31500:
+          hat.mSeenFlags |= HatInfo::SEEN_NORTHWEST;
+          break;
+        default:
+          if (centered) {
+            hat.mSeenFlags |= HatInfo::SEEN_CENTER;
+          }
+      }
+    }
+
+    uint16_t fullRange {};
+    switch (hat.mType) {
+      case HatType::EightWay:
+        fullRange |= HatInfo::SEEN_NORTHEAST | HatInfo::SEEN_SOUTHEAST
+          | HatInfo::SEEN_SOUTHWEST | HatInfo::SEEN_NORTHWEST;
+        [[fallthrough]];
+      case HatType::FourWay:
+        fullRange |= HatInfo::SEEN_CENTER | HatInfo::SEEN_NORTH
+          | HatInfo::SEEN_EAST | HatInfo::SEEN_SOUTH | HatInfo::SEEN_WEST;
+        break;
+      case HatType::Other:
+        // Not going to try and check full-range for a hat with 36,000 values
+        fullRange = 0xffff;
+    }
+
+    ImGui::PushID(winrt::to_string(winrt::to_hstring(hat.mGuid)).c_str());
+    ImGui::BeginGroup();
+    ImGui::Dummy({diameter, diameter});
+    ImGui::SameLine();
+    if ((hat.mSeenFlags & fullRange) == fullRange) {
+      ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "%s", hat.mName.c_str());
+    } else {
+      ImGui::Text("%s", hat.mName.c_str());
+    }
+    ImGui::EndGroup();
+    if (ImGui::BeginItemTooltip()) {
+      switch (hat.mType) {
+        case HatType::EightWay:
+          ImGui::Text("Eight-way hat");
+          break;
+        case HatType::FourWay:
+          ImGui::Text("Four-way hat");
+          break;
+        case HatType::Other:
+          ImGui::Text("36,000-way hat");
+          break;
+      }
+      ImGui::Spacing();
+      ImGui::Text("Value: %ld", value);
+      ImGui::EndTooltip();
+    }
+    ImGui::PopID();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + diameter);
+  }
 }
 
 void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
@@ -236,6 +408,8 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
       axis.mSeenMax = true;
     }
 
+    ImGui::PushID(winrt::to_string(winrt::to_hstring(axis.mGuid)).c_str());
+
     const auto seenFullRange = (axis.mSeenMin && axis.mSeenMax);
     if (seenFullRange) {
       ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
@@ -259,6 +433,8 @@ void GUI::GUIDirectInputAxes(DirectInputDeviceInfo& info, std::byte* state) {
 
     ImGui::SetItemTooltip(
       "Min: %ld\nMax: %ld\nRaw: %ld", axis.mMin, axis.mMax, value);
+
+    ImGui::PopID();
   }
 }
 
@@ -277,8 +453,8 @@ void GUI::GUIDirectInputButtons(
   const auto& style = ImGui::GetStyle();
 
   const auto x = ImGui::GetCursorScreenPos().x;
-  const auto radius = ImGui::GetTextLineHeight();
-  const auto labelX = x + radius + style.ItemInnerSpacing.x;
+  const auto diameter = ImGui::GetTextLineHeight();
+  const auto labelX = x + diameter + style.ItemInnerSpacing.x;
   const auto borderThickness = 1.0f;
 
   const auto enabledBorderColor = ImGui::GetColorU32(ImGuiCol_Text);
@@ -310,13 +486,13 @@ void GUI::GUIDirectInputButtons(
     // Draw fill
     if (pressed) {
       drawList->AddCircleFilled(
-        {x + (radius / 2), y + radius / 2}, radius / 2, activeColor);
+        {x + (diameter / 2), y + diameter / 2}, diameter / 2, activeColor);
     }
 
     // Draw border
     drawList->AddCircle(
-      {x + (radius / 2), y + radius / 2},
-      radius / 2,
+      {x + (diameter / 2), y + diameter / 2},
+      diameter / 2,
       present ? enabledBorderColor : disabledBorderColor,
       0,
       borderThickness);
