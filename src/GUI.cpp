@@ -12,6 +12,7 @@
 #include <format>
 #include <numbers>
 
+#include <Dbt.h>
 #include <ShlObj_core.h>
 #include <Xinput.h>
 #include <imgui.h>
@@ -44,16 +45,6 @@ static std::vector<DIDEVICEINSTANCE> GetDirectInputControllers(
     &ret,
     DIEDFL_ATTACHEDONLY);
 
-  std::stable_sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
-    const auto product = std::string_view {a.tszProductName}
-      <=> std::string_view {b.tszProductName};
-    if (product != 0) {
-      return product < 0;
-    }
-    return std::string_view {a.tszInstanceName}
-    < std::string_view {b.tszInstanceName};
-  });
-
   return ret;
 }
 
@@ -65,6 +56,12 @@ void GUI::Run() {
   if (!ImGui::SFML::Init(window)) {
     return;
   }
+
+  SetWindowSubclass(
+    static_cast<HWND>(window.getSystemHandle()),
+    &SubclassProc,
+    0,
+    reinterpret_cast<DWORD_PTR>(this));
 
   {
     auto& style = ImGui::GetStyle();
@@ -115,26 +112,8 @@ void GUI::GUIControllerTabs() {
       controllers.push_back(it);
     }
   }
-
-  {
-    const auto instances = GetDirectInputControllers(mDI);
-
-    for (auto dit = mDirectInputDevices.begin();
-         dit != mDirectInputDevices.end();) {
-      auto cit = std::ranges::find_if(instances, [dit](const auto& device) {
-        const auto& [guid, details] = *dit;
-        return guid == winrt::guid(device.guidInstance);
-      });
-      if (cit == instances.end()) {
-        dit = mDirectInputDevices.erase(dit);
-      } else {
-        ++dit;
-      }
-    }
-
-    for (const auto& instance: instances) {
-      controllers.push_back(this->GetDirectInputDeviceInfo(instance));
-    }
+  for (auto it: this->GetAllDirectInputDeviceInfo()) {
+    controllers.push_back(it);
   }
 
   ImGui::BeginTabBar("##Controllers");
@@ -745,6 +724,57 @@ void GUI::InitFonts() {
     (fontsPath / "seguiemj.ttf").string().c_str(), 13.0f, &config, ranges);
 
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
+}
+
+std::vector<DeviceInfo*> GUI::GetAllDirectInputDeviceInfo() {
+  if (mDeviceListIsStale) {
+    const auto instances = GetDirectInputControllers(mDI);
+
+    // Clean up removed devices
+    for (auto dit = mDirectInputDevices.begin();
+         dit != mDirectInputDevices.end();) {
+      auto cit = std::ranges::find_if(instances, [dit](const auto& device) {
+        const auto& [guid, details] = *dit;
+        return guid == winrt::guid(device.guidInstance);
+      });
+      if (cit == instances.end()) {
+        dit = mDirectInputDevices.erase(dit);
+      } else {
+        ++dit;
+      }
+    }
+
+    // Add new ones
+    for (const auto& instance: instances) {
+      /* ignored = */ this->GetDirectInputDeviceInfo(instance);
+    }
+  }
+
+  std::vector<DeviceInfo*> ret;
+  for (auto& [guid, info]: mDirectInputDevices) {
+    ret.push_back(&info);
+  }
+
+  std::stable_sort(ret.begin(), ret.end(), [](DeviceInfo* a, DeviceInfo* b) {
+    return std::string_view {a->mName} < std::string_view {b->mName};
+  });
+
+  return ret;
+}
+
+LRESULT GUI::SubclassProc(
+  HWND hWnd,
+  UINT uMsg,
+  WPARAM wParam,
+  LPARAM lParam,
+  UINT_PTR uIdSubclass,
+  DWORD_PTR dwRefData) {
+  if (uMsg == WM_DEVICECHANGE && wParam == DBT_DEVNODES_CHANGED) {
+    auto self = reinterpret_cast<GUI*>(dwRefData);
+    self->mDeviceListIsStale = true;
+  }
+
+  return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
 }// namespace FredEmmott::ControllerTester

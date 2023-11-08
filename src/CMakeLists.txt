@@ -34,10 +34,12 @@ target_include_directories(
 target_link_libraries(
   ${TARGET}
   PRIVATE
+  Microsoft::CppWinRT
   ImGui-SFML::ImGui-SFML
   Dinput8
   dxguid
   XInput
+  Comctl32
 )
 
 target_compile_definitions(
@@ -55,12 +57,6 @@ target_compile_options(
   "/diagnostics:caret" 
   "/utf-8"
   "/await:strict"
-)
-
-target_link_libraries(
-  ${TARGET}
-  PRIVATE
-  Microsoft::CppWinRT
 )
 
 install(

@@ -29,6 +29,7 @@ class GUI final {
   winrt::com_ptr<IDirectInput8> mDI;
   std::unordered_map<winrt::guid, DirectInputDeviceInfo> mDirectInputDevices;
   std::unordered_map<DWORD, XInputDeviceInfo> mXInputDevices;
+  bool mDeviceListIsStale {true};
 
   void InitFonts();
 
@@ -44,6 +45,16 @@ class GUI final {
 
   DirectInputDeviceInfo* GetDirectInputDeviceInfo(const DIDEVICEINSTANCE&);
   XInputDeviceInfo* GetXInputDeviceInfo(DWORD userIndex);
+
+  std::vector<DeviceInfo*> GetAllDirectInputDeviceInfo();
+
+  static LRESULT SubclassProc(
+    HWND hWnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam,
+    UINT_PTR uIdSubclass,
+    DWORD_PTR dwRefData);
 };
 
 }// namespace FredEmmott::ControllerTester
