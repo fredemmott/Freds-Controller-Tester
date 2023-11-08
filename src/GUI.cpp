@@ -174,8 +174,12 @@ void GUI::GUIControllerTab(DeviceInfo* device) {
          + fixedColumns));
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
-    ImGui::TableSetupColumn("##Axes", ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("##Hats", ImGuiTableColumnFlags_WidthFixed);
+    if (!device->mAxes.empty()) {
+      ImGui::TableSetupColumn("##Axes", ImGuiTableColumnFlags_WidthStretch);
+    }
+    if (!device->mHats.empty()) {
+      ImGui::TableSetupColumn("##Hats", ImGuiTableColumnFlags_WidthFixed);
+    }
     for (int i = fixedColumns; i < columnCount; ++i) {
       ImGui::PushID(i);
       ImGui::TableSetupColumn(
