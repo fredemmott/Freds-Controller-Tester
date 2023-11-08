@@ -1,14 +1,37 @@
 # Fred's Controller Tester
 
-Not ready for general use, don't use it.
+A DirectInput and XInput tester.
+
+- XInput-compatible pads can be tested with both DirectInput *and* XInput
+- It handles *any number* of axes, buttons, or hats. Yes, it can handle 128, yes, it can handle even more.
+- It handles multiple devices with the same name, or the same USB VID/PID (e.g. multiple vJoy devices)
+- It supports handles devices with unusual combinations of axes and buttons (e.g. handbrakes with 1 axis and no buttons, or controllers with only buttons)
+- It works with any manufacturer's device
+- It can be used to test axis range
+
+## Colors
+
+- green: the full input range is being tested
+- orange: most of the input range has been tested, but not quite all; this can indicate a calibration error
+- blue: input is detected
+
+## Control Names
+
+This tester shows the axis/button/hat names reported by Windows or the driver; most games ignore these, and it is normal for them to seem incorrect; for example, a clutch might be shown as 'Combined Pedals', even if there is another axis labelled 'Clutch'. This is not a bug, and not anything to worry about.
 
 ## Getting Started
 
-Not ready for general use, don't use it.
+No release yet.
+
+## Screenshots
+
+![XInput Pad](docs/xinput.png)
+![A near-full-range warning on an XBox pad via DirectInput](docs/dinput-xpad-warning.png)
+![Lots of axes, buttons, and hats](docs/vjoy-128.png)
 
 ## Getting Help
 
-Not ready for general use, don't ask for help.
+Help may be available from the community on [my Discord](https://go.fredemmott.com/discord).
 
 ## License
 
