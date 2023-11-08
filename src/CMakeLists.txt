@@ -7,6 +7,7 @@ find_package(cppwinrt CONFIG REQUIRED)
 
 set(TARGET freds-controller-tester)
 set(CODEGEN_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+file(READ "../LICENSE" LICENSE_TEXT)
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/Config.in.hpp"
   "${CODEGEN_BUILD_DIR}/Config.hpp"

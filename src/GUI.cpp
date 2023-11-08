@@ -16,6 +16,7 @@
 #include <ShlObj_core.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
+#include <shellapi.h>
 
 #include "Config.hpp"
 #include <imgui-SFML.h>
@@ -70,7 +71,7 @@ void GUI::Run() {
         | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
         | ImGuiWindowFlags_NoScrollWithMouse);
 
-    GUIControllerTabs();
+    GUITabs();
     ImGui::End();
 
     ImGui::SFML::Render(window);
@@ -81,7 +82,7 @@ void GUI::Run() {
   ImGui::SFML::Shutdown();
 }
 
-void GUI::GUIControllerTabs() {
+void GUI::GUITabs() {
   std::vector<DeviceInfo*> controllers;
   std::ranges::copy(
     mXInputDevices.GetAllDevices(), std::back_inserter(controllers));
@@ -97,7 +98,44 @@ void GUI::GUIControllerTabs() {
     ImGui::PopID();
   }
 
+  GUIAboutTab();
+
   ImGui::EndTabBar();
+}
+
+void GUI::GUIAboutTab() {
+  if (!ImGui::BeginTabItem("About")) {
+    return;
+  }
+
+  ImGui::Text("Fred's Controller Tester v%s", Config::BUILD_VERSION.data());
+  ImGui::TextColored({0.13f, 0.4f, 1.0f, 1.0f}, "You can support this tool!");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  }
+  if (ImGui::IsItemClicked()) {
+    ShellExecuteA(
+      NULL,
+      "open",
+      "https://github.com/sponsors/fredemmott",
+      nullptr,
+      nullptr,
+      0);
+  }
+  ImGui::Separator();
+
+  auto begin = Config::LICENSE_TEXT.begin();
+  while (std::isspace(*begin) && begin != Config::LICENSE_TEXT.end()) {
+    ++begin;
+  }
+  auto end = Config::LICENSE_TEXT.end();
+  while (end > begin && std::isspace(*(end - 1))) {
+    end--;
+  }
+  const auto length = static_cast<int>(end - begin);
+  ImGui::Text("%.*s", length, &*begin);
+
+  ImGui::EndTabItem();
 }
 
 void GUI::GUIControllerTab(DeviceInfo* device) {

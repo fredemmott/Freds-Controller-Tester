@@ -24,7 +24,8 @@ class GUI final {
  private:
   void InitFonts();
 
-  void GUIControllerTabs();
+  void GUITabs();
+  void GUIAboutTab();
   void GUIControllerTab(DeviceInfo*);
   void GUIControllerAxes(DeviceInfo* info, std::byte* state);
   void GUIControllerButtons(
