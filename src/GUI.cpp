@@ -116,7 +116,7 @@ void GUI::GUIControllerTabs() {
     controllers.push_back(it);
   }
 
-  ImGui::BeginTabBar("##Controllers");
+  ImGui::BeginTabBar("##Controllers", ImGuiTabBarFlags_AutoSelectNewTabs);
 
   for (auto controller: controllers) {
     const auto guidStr = winrt::to_string(winrt::to_hstring(controller->mGuid));
