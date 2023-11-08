@@ -470,11 +470,12 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
     constexpr auto nearScale = 0.05f;
 
     TestedRange testedRange {TestedRange::Default};
+
+    const auto nearMin = axis.mMin + (fullRange * nearScale);
+    const auto nearMax = axis.mMax - (fullRange * nearScale);
     if (axis.mMinSeen == axis.mMin && axis.mMaxSeen == axis.mMax) {
       testedRange = TestedRange::FullRange;
-    } else if (
-      axis.mMinSeen < axis.mMin + (fullRange * nearScale)
-      && axis.mMaxSeen > (axis.mMax - (fullRange * nearScale))) {
+    } else if (axis.mMinSeen < nearMin && axis.mMaxSeen > nearMax) {
       testedRange = TestedRange::NearFullRange;
     }
 
@@ -492,9 +493,17 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
     const bool inDeadZone = (value > (axis.mMin + (fullRange * 0.45)))
       && (value < (axis.mMax - (fullRange * 0.45)));
 
-    if (!inDeadZone) {
+    bool changedColor = false;
+    if (value == axis.mMin || value == axis.mMax) {
+      ImGui::PushStyleColor(ImGuiCol_PlotLines, {0.0f, 1.0f, 0.0f, 1.0f});
+      changedColor = true;
+    } else if (value < nearMin || value > nearMax) {
+      ImGui::PushStyleColor(ImGuiCol_PlotLines, Config::WARNING_COLOR);
+      changedColor = true;
+    } else if (!inDeadZone) {
       ImGui::PushStyleColor(
         ImGuiCol_PlotLines, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+      changedColor = true;
     }
 
     ImGui::SetNextItemWidth(plotWidth);
@@ -509,7 +518,7 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
       axis.mMax,
       {0, height});
 
-    if (!inDeadZone) {
+    if (changedColor) {
       ImGui::PopStyleColor();
     }
 
