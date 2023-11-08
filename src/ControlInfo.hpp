@@ -21,7 +21,7 @@ struct AxisInfo final {
   LONG mMinSeen {std::numeric_limits<LONG>::max()};
   LONG mMaxSeen {std::numeric_limits<LONG>::min()};
 
-  std::vector<DWORD> mValues;
+  std::vector<LONG> mValues;
 
   DWORD mDataOffset {};
 };
