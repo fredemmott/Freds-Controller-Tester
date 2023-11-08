@@ -21,7 +21,9 @@ This tester shows the axis/button/hat names reported by Windows or the driver; m
 
 ## Getting Started
 
-No release yet.
+1. Download [the latest release](https://github.com/fredemmott/Freds-Controller-Tester/releases/latest)
+2. Extract the zip somewhere handy
+3. Run the exe!
 
 ## Screenshots
 
