@@ -87,7 +87,6 @@ BOOL DirectInputDeviceInfo::CBEnumDeviceObjects(
 }
 
 DirectInputDeviceInfo::DirectInputDeviceInfo(
-  const DIDEVICEINSTANCE& instance,
   const winrt::com_ptr<IDirectInputDevice8>& device)
   : mDevice(device) {
   if (!mDevice) {

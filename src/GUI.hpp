@@ -7,14 +7,11 @@
 
 #include <sfml/Window.hpp>
 
-#include <unordered_map>
-
-#include <dinput.h>
 #include <imgui.h>
 
 #include "ControlInfo.hpp"
-#include "DirectInputDeviceInfo.hpp"
-#include "XInputDeviceInfo.hpp"
+#include "DirectInputDeviceTracker.hpp"
+#include "XInputDeviceTracker.hpp"
 
 namespace FredEmmott::ControllerTester {
 
@@ -22,15 +19,9 @@ struct DeviceInfo;
 
 class GUI final {
  public:
-  GUI();
   void Run();
 
  private:
-  winrt::com_ptr<IDirectInput8> mDI;
-  std::unordered_map<winrt::guid, DirectInputDeviceInfo> mDirectInputDevices;
-  std::unordered_map<DWORD, XInputDeviceInfo> mXInputDevices;
-  bool mDeviceListIsStale {true};
-
   void InitFonts();
 
   void GUIControllerTabs();
@@ -43,10 +34,8 @@ class GUI final {
     size_t count);
   void GUIControllerHats(DeviceInfo* info, std::byte* state);
 
-  DirectInputDeviceInfo* GetDirectInputDeviceInfo(const DIDEVICEINSTANCE&);
-  XInputDeviceInfo* GetXInputDeviceInfo(DWORD userIndex);
-
-  std::vector<DeviceInfo*> GetAllDirectInputDeviceInfo();
+  DirectInputDeviceTracker mDirectInputDevices;
+  XInputDeviceTracker mXInputDevices;
 
   static LRESULT SubclassProc(
     HWND hWnd,

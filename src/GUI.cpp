@@ -14,39 +14,16 @@
 
 #include <Dbt.h>
 #include <ShlObj_core.h>
-#include <Xinput.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
 
 #include "Config.hpp"
-#include "XInputDeviceInfo.hpp"
 #include <imgui-SFML.h>
 
 namespace FredEmmott::ControllerTester {
 
 static constexpr unsigned int MINIMUM_WIDTH {1024};
 static constexpr unsigned int MINIMUM_HEIGHT {768};
-
-static BOOL CBGetDirectInputControllers(
-  LPCDIDEVICEINSTANCE device,
-  LPVOID ref) {
-  auto& vec = *reinterpret_cast<std::vector<DIDEVICEINSTANCE>*>(ref);
-  vec.push_back(*device);
-  return DIENUM_CONTINUE;
-}
-
-static std::vector<DIDEVICEINSTANCE> GetDirectInputControllers(
-  winrt::com_ptr<IDirectInput8>& di) {
-  std::vector<DIDEVICEINSTANCE> ret;
-
-  di->EnumDevices(
-    DI8DEVCLASS_GAMECTRL,
-    &CBGetDirectInputControllers,
-    &ret,
-    DIEDFL_ATTACHEDONLY);
-
-  return ret;
-}
 
 void GUI::Run() {
   sf::RenderWindow window {
@@ -106,15 +83,10 @@ void GUI::Run() {
 
 void GUI::GUIControllerTabs() {
   std::vector<DeviceInfo*> controllers;
-  for (auto i = 0; i < XUSER_MAX_COUNT; ++i) {
-    auto it = this->GetXInputDeviceInfo(i);
-    if (it) {
-      controllers.push_back(it);
-    }
-  }
-  for (auto it: this->GetAllDirectInputDeviceInfo()) {
-    controllers.push_back(it);
-  }
+  std::ranges::copy(
+    mXInputDevices.GetAllDevices(), std::back_inserter(controllers));
+  std::ranges::copy(
+    mDirectInputDevices.GetAllDevices(), std::back_inserter(controllers));
 
   ImGui::BeginTabBar("##Controllers", ImGuiTabBarFlags_AutoSelectNewTabs);
 
@@ -645,56 +617,6 @@ void GUI::GUIControllerButtons(
   }
 }
 
-DirectInputDeviceInfo* GUI::GetDirectInputDeviceInfo(
-  const DIDEVICEINSTANCE& didi) {
-  const winrt::guid guid {didi.guidInstance};
-  if (mDirectInputDevices.contains(guid)) {
-    return &mDirectInputDevices.at(guid);
-  }
-
-  winrt::com_ptr<IDirectInputDevice8> device;
-
-  winrt::check_hresult(mDI->CreateDevice(guid, device.put(), nullptr));
-
-  DirectInputDeviceInfo ret {didi, device};
-  ret.mName = didi.tszProductName;
-  ret.mGuid = didi.guidInstance;
-
-  auto [it, inserted] = mDirectInputDevices.try_emplace(guid, std::move(ret));
-  return &it->second;
-}
-
-XInputDeviceInfo* GUI::GetXInputDeviceInfo(DWORD userIndex) {
-  XINPUT_STATE state;
-  if (XInputGetState(userIndex, &state) != ERROR_SUCCESS) {
-    if (mXInputDevices.contains(userIndex)) {
-      mXInputDevices.erase(userIndex);
-    }
-    return nullptr;
-  }
-
-  if (mXInputDevices.contains(userIndex)) {
-    return &mXInputDevices.at(userIndex);
-  }
-
-  XInputDeviceInfo ret {userIndex};
-  if (ret.mAxes.empty()) {
-    return nullptr;
-  }
-
-  auto [it, inserted] = mXInputDevices.try_emplace(userIndex, std::move(ret));
-  return &it->second;
-}
-
-GUI::GUI() {
-  DirectInput8Create(
-    GetModuleHandle(nullptr),
-    DIRECTINPUT_VERSION,
-    IID_IDirectInput8,
-    mDI.put_void(),
-    nullptr);
-}
-
 void GUI::InitFonts() {
   wchar_t* fontsPathStr {nullptr};
   if (
@@ -726,42 +648,6 @@ void GUI::InitFonts() {
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
 }
 
-std::vector<DeviceInfo*> GUI::GetAllDirectInputDeviceInfo() {
-  if (mDeviceListIsStale) {
-    const auto instances = GetDirectInputControllers(mDI);
-
-    // Clean up removed devices
-    for (auto dit = mDirectInputDevices.begin();
-         dit != mDirectInputDevices.end();) {
-      auto cit = std::ranges::find_if(instances, [dit](const auto& device) {
-        const auto& [guid, details] = *dit;
-        return guid == winrt::guid(device.guidInstance);
-      });
-      if (cit == instances.end()) {
-        dit = mDirectInputDevices.erase(dit);
-      } else {
-        ++dit;
-      }
-    }
-
-    // Add new ones
-    for (const auto& instance: instances) {
-      /* ignored = */ this->GetDirectInputDeviceInfo(instance);
-    }
-  }
-
-  std::vector<DeviceInfo*> ret;
-  for (auto& [guid, info]: mDirectInputDevices) {
-    ret.push_back(&info);
-  }
-
-  std::stable_sort(ret.begin(), ret.end(), [](DeviceInfo* a, DeviceInfo* b) {
-    return std::string_view {a->mName} < std::string_view {b->mName};
-  });
-
-  return ret;
-}
-
 LRESULT GUI::SubclassProc(
   HWND hWnd,
   UINT uMsg,
@@ -771,7 +657,8 @@ LRESULT GUI::SubclassProc(
   DWORD_PTR dwRefData) {
   if (uMsg == WM_DEVICECHANGE && wParam == DBT_DEVNODES_CHANGED) {
     auto self = reinterpret_cast<GUI*>(dwRefData);
-    self->mDeviceListIsStale = true;
+    self->mDirectInputDevices.MarkStale();
+    self->mXInputDevices.MarkStale();
   }
 
   return DefSubclassProc(hWnd, uMsg, wParam, lParam);

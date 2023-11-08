@@ -23,9 +23,10 @@ struct XInputDeviceInfo final : public DeviceInfo {
   virtual bool Poll() override;
   virtual std::vector<std::byte> GetState() override;
 
+  DWORD mUserIndex;
+
  private:
   struct EmulatedDIState;
-  DWORD mUserIndex;
 };
 
 }// namespace FredEmmott::ControllerTester

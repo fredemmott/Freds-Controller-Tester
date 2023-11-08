@@ -20,7 +20,9 @@ add_executable(
   main.cpp
   DeviceInfo.cpp
   DirectInputDeviceInfo.cpp
+  DirectInputDeviceTracker.cpp
   XInputDeviceInfo.cpp
+  XInputDeviceTracker.cpp
   manifest.xml
 )
 
