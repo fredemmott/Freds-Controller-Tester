@@ -37,7 +37,7 @@ else()
 endif()
 
 
-project(freds-controller-tester VERSION 0.0.1.${VERSION_BUILD} LANGUAGES CXX C)
+project(freds-controller-tester VERSION 0.0.2.${VERSION_BUILD} LANGUAGES CXX C)
 
 
 # Handy for CI
