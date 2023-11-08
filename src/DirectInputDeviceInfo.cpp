@@ -153,7 +153,7 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
   }
 
   if (offset % 4) {
-    mDataSize = 4 - (offset % 4);
+    mDataSize = offset + (4 - (offset % 4));
   } else {
     mDataSize = offset;
   }
@@ -162,7 +162,7 @@ DirectInputDeviceInfo::DirectInputDeviceInfo(
     .dwSize = sizeof(DIDATAFORMAT),
     .dwObjSize = sizeof(DIOBJECTDATAFORMAT),
     .dwFlags = DIDF_ABSAXIS,
-    .dwDataSize = offset,
+    .dwDataSize = mDataSize,
     .dwNumObjs = static_cast<DWORD>(objectFormats.size()),
     .rgodf = objectFormats.data(),
   };
