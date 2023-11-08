@@ -165,7 +165,8 @@ XInputDeviceInfo::XInputDeviceInfo(DWORD userIndex) : mUserIndex(userIndex) {
 XInputDeviceInfo::~XInputDeviceInfo() {
 }
 
-void XInputDeviceInfo::Poll() {
+bool XInputDeviceInfo::Poll() {
+  return true;
 }
 
 std::vector<std::byte> XInputDeviceInfo::GetState() {

@@ -20,7 +20,7 @@ struct DeviceInfo {
   std::vector<ButtonInfo> mButtons;
   std::vector<HatInfo> mHats;
 
-  virtual void Poll() = 0;
+  virtual bool Poll() = 0;
 
   virtual std::vector<std::byte> GetState() = 0;
 };

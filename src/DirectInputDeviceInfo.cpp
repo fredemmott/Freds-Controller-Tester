@@ -176,12 +176,12 @@ DirectInputDeviceInfo::~DirectInputDeviceInfo() {
   }
 }
 
-void DirectInputDeviceInfo::Poll() {
+bool DirectInputDeviceInfo::Poll() {
   if (!(mNeedsPolling && mDevice)) {
-    return;
+    return true;
   }
 
-  mDevice->Poll();
+  return mDevice->Poll() == DI_OK;
 }
 
 std::vector<std::byte> DirectInputDeviceInfo::GetState() {
@@ -193,7 +193,9 @@ std::vector<std::byte> DirectInputDeviceInfo::GetState() {
   }
 
   std::vector<std::byte> state(mDataSize, {});
-  winrt::check_hresult(mDevice->GetDeviceState(mDataSize, state.data()));
+  if (mDevice->GetDeviceState(mDataSize, state.data()) != DI_OK) {
+    return {};
+  }
   return state;
 }
 

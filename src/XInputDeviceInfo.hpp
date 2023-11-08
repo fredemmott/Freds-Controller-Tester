@@ -20,7 +20,7 @@ struct XInputDeviceInfo final : public DeviceInfo {
   XInputDeviceInfo& operator=(const XInputDeviceInfo&) = delete;
   XInputDeviceInfo& operator=(XInputDeviceInfo&&) = default;
 
-  virtual void Poll() override;
+  virtual bool Poll() override;
   virtual std::vector<std::byte> GetState() override;
 
  private:

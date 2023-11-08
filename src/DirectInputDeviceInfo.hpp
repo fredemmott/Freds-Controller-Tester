@@ -24,7 +24,7 @@ struct DirectInputDeviceInfo final : public DeviceInfo {
   DirectInputDeviceInfo& operator=(const DirectInputDeviceInfo&) = delete;
   DirectInputDeviceInfo& operator=(DirectInputDeviceInfo&&) = default;
 
-  virtual void Poll() override;
+  virtual bool Poll() override;
   virtual std::vector<std::byte> GetState() override;
 
  private:
