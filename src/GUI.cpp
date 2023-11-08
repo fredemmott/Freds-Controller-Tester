@@ -339,7 +339,7 @@ void GUI::GUIControllerHats(DeviceInfo* info, std::byte* state) {
     ImGui::Dummy({diameter, diameter});
     ImGui::SameLine();
     if ((hat.mSeenFlags & fullRange) == fullRange) {
-      ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "%s", hat.mName.c_str());
+      ImGui::TextColored(Config::FULL_RANGE_COLOR, "%s", hat.mName.c_str());
     } else {
       ImGui::Text("%s", hat.mName.c_str());
     }
@@ -395,7 +395,7 @@ void GUI::GUIControllerHats(DeviceInfo* info, std::byte* state) {
             text += std::format(", {}", *it);
           }
           if ((hat.mSeenFlags & fullRange) == fullRange) {
-            ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "%s", text.c_str());
+            ImGui::TextColored(Config::FULL_RANGE_COLOR, "%s", text.c_str());
           } else {
             ImGui::Text("%s", text.c_str());
           }
@@ -481,7 +481,7 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
 
     switch (testedRange) {
       case TestedRange::FullRange:
-        ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 1.0f, 0.0f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_Text, Config::FULL_RANGE_COLOR);
         break;
       case TestedRange::NearFullRange:
         ImGui::PushStyleColor(ImGuiCol_Text, Config::WARNING_COLOR);
@@ -495,7 +495,7 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
 
     bool changedColor = false;
     if (value == axis.mMin || value == axis.mMax) {
-      ImGui::PushStyleColor(ImGuiCol_PlotLines, {0.0f, 1.0f, 0.0f, 1.0f});
+      ImGui::PushStyleColor(ImGuiCol_PlotLines, Config::FULL_RANGE_COLOR);
       changedColor = true;
     } else if (value < nearMin || value > nearMax) {
       ImGui::PushStyleColor(ImGuiCol_PlotLines, Config::WARNING_COLOR);
@@ -636,7 +636,7 @@ void GUI::GUIControllerButtons(
 
       if (button.mSeenOff && button.mSeenOn) {
         ImGui::TextColored(
-          {0.0f, 1.0f, 0.0f, 1.0f}, "%s", button.mName.c_str());
+          Config::FULL_RANGE_COLOR, "%s", button.mName.c_str());
       } else {
         ImGui::Text("%s", button.mName.c_str());
       }
