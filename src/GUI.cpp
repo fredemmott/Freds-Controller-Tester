@@ -442,15 +442,31 @@ void GUI::GUIControllerAxes(DeviceInfo* info, std::byte* state) {
     }
 
     std::string valueStr;
+    std::optional<long> percent;
     if (axis.mMin >= 0) {
-      valueStr = std::format(
-        "{:0.0f}%", (100.0f * (value - axis.mMin)) / (axis.mMax - axis.mMin));
-    } else if (std::abs(axis.mMax / axis.mMin) <= 0.001) {
-      if (value >= 0) {
-        valueStr = std::format("{:0.0f}%", (100.0f * value / axis.mMax));
-      } else {
-        valueStr = std::format("{:0.0f}%", (-100.0f * value / axis.mMin));
+      percent
+        = std::lround((100.0f * (value - axis.mMin)) / (axis.mMax - axis.mMin));
+      if (percent == 0 && value != axis.mMin) {
+        percent = 1;
+      } else if (percent == 100 && value != axis.mMax) {
+        percent = 99;
       }
+    } else if (std::abs(axis.mMax / axis.mMin) <= 0.001) {
+      // symmetrical, -x to +x
+      if (value >= 0) {
+        percent = std::lround((100.0f * value) / axis.mMax);
+      } else {
+        percent = std::lround((-100.0f * value) / axis.mMin);
+      }
+
+      if (percent == -100 && value != axis.mMin) {
+        percent = -99;
+      } else if (percent == 100 && value != axis.mMax) {
+        percent = 99;
+      }
+    }
+    if (percent) {
+      valueStr = std::format("{:d}%", *percent);
     } else {
       valueStr = std::to_string(value);
     }
