@@ -13,6 +13,7 @@
 #include <numbers>
 
 #include <Dbt.h>
+#include <ShellScalingApi.h>
 #include <ShlObj_core.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
@@ -34,12 +35,17 @@ void GUI::Run() {
   if (!ImGui::SFML::Init(window)) {
     return;
   }
+  const auto hwnd = static_cast<HWND>(window.getSystemHandle());
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-  SetWindowSubclass(
-    static_cast<HWND>(window.getSystemHandle()),
-    &SubclassProc,
-    0,
-    reinterpret_cast<DWORD_PTR>(this));
+  SetWindowSubclass(hwnd, &SubclassProc, 0, reinterpret_cast<DWORD_PTR>(this));
+
+  mDPIScaling
+    = static_cast<float>(GetDpiForWindow(hwnd)) / USER_DEFAULT_SCREEN_DPI;
+  window.setSize({
+    static_cast<unsigned int>(MINIMUM_WIDTH * mDPIScaling),
+    static_cast<unsigned int>(MINIMUM_HEIGHT * mDPIScaling),
+  });
 
   {
     auto& style = ImGui::GetStyle();
@@ -50,6 +56,19 @@ void GUI::Run() {
   this->InitFonts();
   sf::Clock deltaClock {};
   while (window.isOpen()) {
+    if (mDPIChanged) {
+      this->InitFonts();
+      const auto& rect = mRecommendedWindowRect;
+      // The (left, top) position is handled by SFML or Windows already; if we
+      // apply it here, We end up shifting when dragging between monitors set at
+      // different DPIs
+      window.setSize({
+        static_cast<unsigned int>(rect.right - rect.left),
+        static_cast<unsigned int>(rect.bottom - rect.top),
+      });
+      mDPIChanged = false;
+    }
+
     sf::Event event {};
     while (window.pollEvent(event)) {
       ImGui::SFML::ProcessEvent(window, event);
@@ -672,7 +691,7 @@ void GUI::InitFonts() {
 
   io.Fonts->Clear();
   io.Fonts->AddFontFromFileTTF(
-    (fontsPath / "segoeui.ttf").string().c_str(), 16.0f);
+    (fontsPath / "segoeui.ttf").string().c_str(), 16.0f * mDPIScaling);
 
   static ImWchar ranges[] = {0x1, 0x1ffff, 0};
   static ImFontConfig config {};
@@ -681,7 +700,10 @@ void GUI::InitFonts() {
   config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
   io.Fonts->AddFontFromFileTTF(
-    (fontsPath / "seguiemj.ttf").string().c_str(), 13.0f, &config, ranges);
+    (fontsPath / "seguiemj.ttf").string().c_str(),
+    13.0f * mDPIScaling,
+    &config,
+    ranges);
 
   { [[maybe_unused]] auto ignored = ImGui::SFML::UpdateFontTexture(); }
 }
@@ -693,10 +715,20 @@ LRESULT GUI::SubclassProc(
   LPARAM lParam,
   UINT_PTR uIdSubclass,
   DWORD_PTR dwRefData) {
-  if (uMsg == WM_DEVICECHANGE && wParam == DBT_DEVNODES_CHANGED) {
-    auto self = reinterpret_cast<GUI*>(dwRefData);
-    self->mDirectInputDevices.MarkStale();
-    self->mXInputDevices.MarkStale();
+  const auto self = reinterpret_cast<GUI*>(dwRefData);
+  switch (uMsg) {
+    case WM_DEVICECHANGE:
+      if (wParam == DBT_DEVNODES_CHANGED) {
+        self->mDirectInputDevices.MarkStale();
+        self->mXInputDevices.MarkStale();
+      }
+      break;
+    case WM_DPICHANGED:
+      self->mDPIChanged = true;
+      self->mDPIScaling
+        = static_cast<float>(HIWORD(wParam)) / USER_DEFAULT_SCREEN_DPI;
+      self->mRecommendedWindowRect = *reinterpret_cast<RECT*>(lParam);
+      break;
   }
 
   return DefSubclassProc(hWnd, uMsg, wParam, lParam);

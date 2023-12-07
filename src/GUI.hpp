@@ -37,6 +37,9 @@ class GUI final {
 
   DirectInputDeviceTracker mDirectInputDevices;
   XInputDeviceTracker mXInputDevices;
+  bool mDPIChanged {false};
+  float mDPIScaling {};
+  RECT mRecommendedWindowRect {};
 
   static LRESULT SubclassProc(
     HWND hWnd,
