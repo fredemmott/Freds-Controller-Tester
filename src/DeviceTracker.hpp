@@ -6,7 +6,7 @@
 #include <concepts>
 #include <ranges>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 #include "DeviceInfo.hpp"
 
@@ -56,7 +56,7 @@ class DeviceTracker {
 
     // Remove devices that are no longer present
     for (auto existingIt = mDevices.begin(); existingIt != mDevices.end();) {
-      auto key = existingIt->first;
+      auto key = std::get<0>(*existingIt);
       const auto newIt = std::ranges::find_if(
         devices, [key](const auto& it) { return TDerived::GetKey(it) == key; });
       if (newIt == devices.end()) {
@@ -67,10 +67,12 @@ class DeviceTracker {
     }
 
     // Add new ones
-    for (const auto& it: devices) {
-      const auto key = TDerived::GetKey(it);
-      if (!mDevices.contains(key)) {
-        mDevices.try_emplace(key, this->CreateInfo(it));
+    for (const auto& newIt: devices) {
+      const auto key = TDerived::GetKey(newIt);
+      auto existingIt = std::ranges::find(
+        mDevices, key, [](const auto& pair) { return std::get<0>(pair); });
+      if (existingIt == mDevices.end()) {
+        mDevices.push_back({key, this->CreateInfo(newIt)});
       }
     }
 
@@ -79,6 +81,6 @@ class DeviceTracker {
 
  private:
   bool mStale {true};
-  std::unordered_map<TKey, TInfo> mDevices;
+  std::vector<std::tuple<TKey, TInfo>> mDevices;
 };
 }// namespace FredEmmott::ControllerTester
