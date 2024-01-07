@@ -37,6 +37,12 @@ Help may be available from the community on [my Discord](https://go.fredemmott.c
 
 ## License
 
+This software is licensed under the ISC license (below); the icon is licensed under the Apache License v2.0.
+
+See [LICENSE](LICENSE) and [icon/LICENSE](icon/LICENSE) for details.
+
+---
+
 Copyright (c) 2023 Fred Emmott.
 
 Permission to use, copy, modify, and/or distribute this software for any purpose

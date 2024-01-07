@@ -25,6 +25,7 @@ add_executable(
   XInputDeviceInfo.cpp
   XInputDeviceTracker.cpp
   manifest.xml
+  "${CMAKE_SOURCE_DIR}/icon/icon.rc"
 )
 
 target_include_directories(

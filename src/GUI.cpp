@@ -36,9 +36,14 @@ void GUI::Run() {
     return;
   }
   const auto hwnd = static_cast<HWND>(window.getSystemHandle());
+
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
   SetWindowSubclass(hwnd, &SubclassProc, 0, reinterpret_cast<DWORD_PTR>(this));
+  auto icon = LoadIconW(GetModuleHandle(nullptr), L"appIcon");
+  if (icon) {
+    SetClassLongPtr(hwnd, GCLP_HICON, reinterpret_cast<LONG_PTR>(icon));
+  }
 
   mDPIScaling
     = static_cast<float>(GetDpiForWindow(hwnd)) / USER_DEFAULT_SCREEN_DPI;
