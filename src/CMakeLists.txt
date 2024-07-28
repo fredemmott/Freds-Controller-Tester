@@ -44,6 +44,8 @@ target_link_libraries(
   dxguid
   XInput
   Comctl32
+  # Needed by C++/WinRT, but not in the vcpkg requirements
+  WindowsApp
 )
 
 target_compile_definitions(
