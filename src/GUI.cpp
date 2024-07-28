@@ -49,6 +49,13 @@ void GUI::Run() {
     ShowWindow(hwnd, SW_SHOW);
   }
 
+  // workaround for:
+  // - https://github.com/SFML/imgui-sfml/issues/206
+  // - https://github.com/SFML/imgui-sfml/issues/212
+  SetFocus(hwnd);
+  ImGui::SFML::ProcessEvent(window, {sf::Event::LostFocus});
+  ImGui::SFML::ProcessEvent(window, {sf::Event::GainedFocus});
+
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
   SetWindowSubclass(hwnd, &SubclassProc, 0, reinterpret_cast<DWORD_PTR>(this));
