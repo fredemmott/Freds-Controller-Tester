@@ -15,6 +15,7 @@
 #include <Dbt.h>
 #include <ShellScalingApi.h>
 #include <ShlObj_core.h>
+#include <dwmapi.h>
 #include <imgui.h>
 #include <imgui_freetype.h>
 #include <shellapi.h>
@@ -36,6 +37,17 @@ void GUI::Run() {
     return;
   }
   const auto hwnd = static_cast<HWND>(window.getSystemHandle());
+
+  {
+    const BOOL enableDarkModeTitleBar = true;
+    ShowWindow(hwnd, SW_HIDE);
+    DwmSetWindowAttribute(
+      hwnd,
+      DWMWA_USE_IMMERSIVE_DARK_MODE,
+      &enableDarkModeTitleBar,
+      sizeof(enableDarkModeTitleBar));
+    ShowWindow(hwnd, SW_SHOW);
+  }
 
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
@@ -183,8 +195,8 @@ void GUI::GUIControllerTab(DeviceInfo* device) {
     const auto columnCount = (buttonCount == 0)
       ? fixedColumns
       : static_cast<unsigned int>(
-        (std::ceill(static_cast<float>(buttonCount) / buttonsPerColumn)
-         + fixedColumns));
+          (std::ceill(static_cast<float>(buttonCount) / buttonsPerColumn)
+           + fixedColumns));
     ImGui::BeginTable("##Controls", columnCount, 0, {-FLT_MIN, -FLT_MIN});
 
     if (!device->mAxes.empty()) {
@@ -634,9 +646,8 @@ void GUI::GUIControllerButtons(
     yOffset = 0;
 
     const auto pressed = present
-      ? (
-        (*reinterpret_cast<uint8_t*>(state + info->mButtons.at(i).mDataOffset))
-        & 0x80)
+      ? ((*reinterpret_cast<uint8_t*>(state + info->mButtons.at(i).mDataOffset))
+         & 0x80)
       : false;
     // Draw fill
     if (pressed) {

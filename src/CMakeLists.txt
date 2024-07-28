@@ -42,6 +42,7 @@ target_link_libraries(
   ImGui-SFML::ImGui-SFML
   Dinput8
   dxguid
+  Dwmapi
   XInput
   Comctl32
   # Needed by C++/WinRT, but not in the vcpkg requirements
