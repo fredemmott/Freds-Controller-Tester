@@ -13,6 +13,11 @@ configure_file(
   "${CODEGEN_BUILD_DIR}/Config.hpp"
   @ONLY
 )
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/version.in.rc"
+  "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+  @ONLY
+)
 
 add_executable(
   ${TARGET}
@@ -27,6 +32,7 @@ add_executable(
   XInputDeviceTracker.cpp
   manifest.xml
   "${CMAKE_SOURCE_DIR}/icon/icon.rc"
+  "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
 )
 
 target_include_directories(

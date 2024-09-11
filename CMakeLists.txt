@@ -36,8 +36,14 @@ else()
   set(VERSION_BUILD 0)
 endif()
 
-
-project(freds-controller-tester VERSION 1.0.5.${VERSION_BUILD} LANGUAGES CXX C)
+set(VERSION "1.0.5")
+set(VERSION_QUAD "${VERSION}.${VERSION_BUILD}")
+if (VERSION_BUILD)
+  set(VERSION_STRING "${VERSION}+gha.${VERSION_BUILD}")
+else ()
+  set(VERSION_STRING "${VERSION}+local")
+endif ()
+project(freds-controller-tester VERSION ${VERSION_QUAD} LANGUAGES CXX C)
 
 
 # Handy for CI
