@@ -42,10 +42,6 @@ project(freds-controller-tester VERSION 1.0.5.${VERSION_BUILD} LANGUAGES CXX C)
 
 # Handy for CI
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${CMAKE_PROJECT_VERSION}")
-install(
-  FILES "${CMAKE_BINARY_DIR}/version.txt"
-  DESTINATION "."
-)
 
 option(USE_EMOJI "Use emoji for status symbols" ON)
 
@@ -56,9 +52,3 @@ include(sign_target.cmake)
 
 add_subdirectory("third-party")
 add_subdirectory("src")
-
-install(
-  FILES LICENSE
-  DESTINATION "."
-  RENAME LICENSE.txt
-)
