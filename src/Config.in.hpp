@@ -9,7 +9,8 @@
 
 namespace FredEmmott::ControllerTester::Config {
 
-constexpr std::string_view BUILD_VERSION {"@CMAKE_PROJECT_VERSION@"};
+constexpr auto BUILD_VERSION {"@CMAKE_PROJECT_VERSION@"};
+constexpr auto BUILD_VERSION_W {L"@CMAKE_PROJECT_VERSION@"};
 constexpr auto MAX_FPS {60};
 constexpr size_t AXIS_HISTORY_FRAMES {MAX_FPS * 5};
 

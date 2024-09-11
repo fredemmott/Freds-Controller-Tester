@@ -18,6 +18,7 @@ add_executable(
   ${TARGET}
   WIN32
   GUI.cpp
+  CheckForUpdates.cpp
   main.cpp
   DeviceInfo.cpp
   DirectInputDeviceInfo.cpp
@@ -69,6 +70,19 @@ target_compile_options(
 install(
   TARGETS "${TARGET}"
   DESTINATION "."
+)
+install(
+  FILES "${UPDATER_EXE}"
+  DESTINATION "."
+)
+add_custom_command(
+  TARGET "${TARGET}"
+  POST_BUILD
+  COMMAND
+  "${CMAKE_COMMAND}" -E copy_if_different
+  "${UPDATER_EXE}"
+  "$<TARGET_FILE_DIR:${TARGET}>/fredemmott_Freds-Controller-Tester_Updater.exe"
+  VERBATIM
 )
 
 sign_target("${TARGET}")

@@ -151,7 +151,7 @@ void GUI::GUIAboutTab() {
     return;
   }
 
-  ImGui::Text("Fred's Controller Tester v%s", Config::BUILD_VERSION.data());
+  ImGui::Text("Fred's Controller Tester v%s", Config::BUILD_VERSION);
   ImGui::TextColored({0.13f, 0.4f, 1.0f, 1.0f}, "You can support this tool!");
   if (ImGui::IsItemHovered()) {
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);

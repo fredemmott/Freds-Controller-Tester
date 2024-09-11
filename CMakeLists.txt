@@ -1,7 +1,7 @@
 # Copyright 2023 Fred Emmott <fred@fredemmott.com>
 # SPDX-License-Identifier: ISC
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10...3.30 FATAL_ERROR)
 
 # Enable CMAKE_MSVC_RUNTIME_LIBRARY variable
 cmake_policy(SET CMP0091 NEW)
@@ -54,6 +54,7 @@ message(STATUS "Building Freds Controller Tester v${CMAKE_PROJECT_VERSION}")
 
 include(sign_target.cmake)
 
+add_subdirectory("third-party")
 add_subdirectory("src")
 
 install(
