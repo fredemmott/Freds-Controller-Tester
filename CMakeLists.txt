@@ -36,7 +36,7 @@ else()
   set(VERSION_BUILD 0)
 endif()
 
-set(VERSION "1.0.5")
+set(VERSION "1.1.0")
 set(VERSION_QUAD "${VERSION}.${VERSION_BUILD}")
 if (VERSION_BUILD)
   set(VERSION_STRING "${VERSION}+gha.${VERSION_BUILD}")
