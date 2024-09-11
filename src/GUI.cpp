@@ -152,19 +152,6 @@ void GUI::GUIAboutTab() {
   }
 
   ImGui::Text("Fred's Controller Tester v%s", Config::BUILD_VERSION);
-  ImGui::TextColored({0.13f, 0.4f, 1.0f, 1.0f}, "You can support this tool!");
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-  }
-  if (ImGui::IsItemClicked()) {
-    ShellExecuteA(
-      NULL,
-      "open",
-      "https://github.com/sponsors/fredemmott",
-      nullptr,
-      nullptr,
-      0);
-  }
   ImGui::Separator();
 
   auto begin = Config::LICENSE_TEXT.begin();
@@ -709,6 +696,7 @@ void GUI::InitFonts() {
   }
 
   std::filesystem::path fontsPath {fontsPathStr};
+  CoTaskMemFree(fontsPathStr);
 
   auto& io = ImGui::GetIO();
 
