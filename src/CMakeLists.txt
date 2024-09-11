@@ -71,10 +71,6 @@ install(
   TARGETS "${TARGET}"
   DESTINATION "."
 )
-install(
-  FILES "${UPDATER_EXE}"
-  DESTINATION "."
-)
 add_custom_command(
   TARGET "${TARGET}"
   POST_BUILD
@@ -83,6 +79,11 @@ add_custom_command(
   "${UPDATER_EXE}"
   "$<TARGET_FILE_DIR:${TARGET}>/fredemmott_Freds-Controller-Tester_Updater.exe"
   VERBATIM
+)
+install(
+  FILES
+  "$<TARGET_FILE_DIR:${TARGET}>/fredemmott_Freds-Controller-Tester_Updater.exe"
+  DESTINATION "."
 )
 
 sign_target("${TARGET}")
