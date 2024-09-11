@@ -36,6 +36,29 @@ void GUI::Run() {
   if (!ImGui::SFML::Init(window)) {
     return;
   }
+  {
+    wchar_t* localAppDataStr {nullptr};
+    if (
+      SHGetKnownFolderPath(
+        FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &localAppDataStr)
+      != S_OK) {
+      return;
+    }
+
+    if (!localAppDataStr) {
+      return;
+    }
+
+    const auto iniPath = std::filesystem::path {localAppDataStr}
+      / "Freds Controller Tester" / "imgui.ini";
+    CoTaskMemFree(localAppDataStr);
+    std::filesystem::create_directories(iniPath.parent_path());
+
+    static std::string iniPathStr;
+    iniPathStr = iniPath.string();
+    ImGui::GetIO().IniFilename = iniPathStr.c_str();
+  }
+
   const auto hwnd = static_cast<HWND>(window.getSystemHandle());
 
   {
