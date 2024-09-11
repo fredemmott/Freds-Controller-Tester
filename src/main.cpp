@@ -5,8 +5,8 @@
 
 #include <winrt/base.h>
 
-#include "GUI.hpp"
 #include "CheckForUpdates.hpp"
+#include "GUI.hpp"
 
 int WINAPI wWinMain(
   [[maybe_unused]] HINSTANCE hInstance,
