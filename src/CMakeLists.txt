@@ -91,5 +91,3 @@ install(
   "$<TARGET_FILE_DIR:${TARGET}>/fredemmott_Freds-Controller-Tester_Updater.exe"
   DESTINATION "."
 )
-
-sign_target("${TARGET}")

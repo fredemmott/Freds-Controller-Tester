@@ -54,7 +54,5 @@ option(USE_EMOJI "Use emoji for status symbols" ON)
 
 message(STATUS "Building Freds Controller Tester v${CMAKE_PROJECT_VERSION}")
 
-include(sign_target.cmake)
-
 add_subdirectory("third-party")
 add_subdirectory("src")
