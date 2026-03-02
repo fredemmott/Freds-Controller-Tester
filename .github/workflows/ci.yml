@@ -37,7 +37,7 @@ jobs:
         run: |
           cmake --install . --config ${{matrix.build-type}} --prefix ${{runner.temp}}/install
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ matrix.build-type != 'Debug' }}
         with:
           name: "Freds-Controller-Tester-v${{steps.configure.outputs.version}}"
